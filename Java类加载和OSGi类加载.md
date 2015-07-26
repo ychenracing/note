@@ -135,9 +135,11 @@ public class FileSystemClassLoader extends ClassLoader {
 对于以上几个问题，如果单独使用一个类加载器明显是达不到效果的，必须根据实际使用若干个自定义类加载器。
 
 Tomcat5类加载机制：  
-![Tomcat5类加载](http://imtiger.net/images/2013/10/30/tomcat-classloader.png "Tomcat5类加载")
+![Tomcat5类加载](http://imtiger.net/images/2013/10/30/tomcat-classloader.png "Tomcat5类加载")  
+
 Tomcat6类加载机制：  
-![Tomcat6类加载](http://7xipn4.com1.z0.glb.clouddn.com/assets/jvm/classloader/tomcat6.jpg "Tomcat6类加载")
+![Tomcat6类加载](http://7xipn4.com1.z0.glb.clouddn.com/assets/jvm/classloader/tomcat6.jpg "Tomcat6类加载")  
+
 Tomcat7类加载机制：  
 ![Tomcat7类加载](http://7xipn4.com1.z0.glb.clouddn.com/assets/jvm/classloader/tomcat7.png "Tomcat7类加载")
 
@@ -191,3 +193,6 @@ OSGi 中的每个模块（bundle）都包含 Java 包和类。模块可以声明
 
 The END!
 
+###Reference:###
+[1] [http://www.ibm.com/developerworks/cn/java/j-lo-classloader/index.html](http://www.ibm.com/developerworks/cn/java/j-lo-classloader/index.html)  
+[2] [http://imtiger.net/blog/2013/10/28/tomcat-class-loader/](http://imtiger.net/blog/2013/10/28/tomcat-class-loader/)  
