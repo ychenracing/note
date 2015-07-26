@@ -135,3 +135,6 @@ JDK7有个[LinkedTransferQueue](http://ifeve.com/java-transfer-queue/)，transfe
 ##有关的...##
 
 2015-04-21 -- [JDK数则](http://calvin1978.blogcn.com/articles/jdk.html)
+
+###Reference:###
+[1] [http://calvin1978.blogcn.com/articles/collection.html](http://calvin1978.blogcn.com/articles/collection.html)
