@@ -479,15 +479,15 @@ real updating db...someone
 |condition|缓存的条件，可以为空，使用 SpEL 编写，返回 true 或者 false，只有为 true 才进行缓存|例如：@CachePut(value=“testcache”, condition=“#userName.length()>2”)|
 
 ###@CacheEvict###
-@CachEvict: 主要针对方法配置，能够根据一定的条件对缓存进行清空
+@CacheEvict: 主要针对方法配置，能够根据一定的条件对缓存进行清空
 
 |属性|说明|补充|
 |--:|:--:|---|
-|value|缓存的名称，在 spring 配置文件中定义，必须指定至少一个|例如： @CachEvict(value=“mycache”) 或者 @CachEvict(value={“cache1”, “cache2”}|
-|key|缓存的 key，可以为空，如果指定要按照 SpEL 表达式编写，如果不指定，则缺省按照方法的所有参数进行组合|例如： @CachEvict(value=“testcache”, key=“#userName”)|
-|condition|缓存的条件，可以为空，使用 SpEL 编写，返回 true 或者 false，只有为 true 才清空缓存|例如： @CachEvict(value=“testcache”, condition=“#userName.length()>2”)|
-|allEntries|是否清空所有缓存内容，缺省为 false，如果指定为 true，则方法调用后将立即清空所有缓存|例如： @CachEvict(value=“testcache”, allEntries=true)|
-|beforeInvocation|是否在方法执行前就清空，缺省为 false，如果指定为 true，则在方法还没有执行的时候就清空缓存，缺省情况下，**如果方法执行抛出异常，则不会清空缓存**|例如：@CachEvict(value=“testcache”，beforeInvocation=true)|
+|value|缓存的名称，在 spring 配置文件中定义，必须指定至少一个|例如： @CacheEvict(value=“mycache”) 或者 @CacheEvict(value={“cache1”, “cache2”}|
+|key|缓存的 key，可以为空，如果指定要按照 SpEL 表达式编写，如果不指定，则缺省按照方法的所有参数进行组合|例如： @CacheEvict(value=“testcache”, key=“#userName”)|
+|condition|缓存的条件，可以为空，使用 SpEL 编写，返回 true 或者 false，只有为 true 才清空缓存|例如： @CacheEvict(value=“testcache”, condition=“#userName.length()>2”)|
+|allEntries|是否清空所有缓存内容，缺省为 false，如果指定为 true，则方法调用后将立即清空所有缓存|例如： @CacheEvict(value=“testcache”, allEntries=true)|
+|beforeInvocation|是否在方法执行前就清空，缺省为 false，如果指定为 true，则在方法还没有执行的时候就清空缓存，缺省情况下，**如果方法执行抛出异常，则不会清空缓存**|例如：@CacheEvict(value=“testcache”，beforeInvocation=true)|
 
 ##扩展性##
 直到现在，我们已经学会了如何使用开箱即用的 spring cache，这基本能够满足一般应用对缓存的需求，但现实总是很复杂，当你的用户量上去或者性能跟不上，总需要进行扩展，这个时候你或许对其提供的内存缓存不满意了，因为其不支持高可用性，也不具备持久化数据能力，这个时候，你就需要自定义你的缓存方案了，还好，spring 也想到了这一点。
@@ -675,3 +675,7 @@ real querying db...someone
 ```
 
 可见，结果是每次都查询数据库，缓存没起作用。要避免这个问题，就是要避免对缓存方法的内部调用，或者避免使用基于 proxy 的 AOP 模式，可以使用基于 aspectJ 的 AOP 模式来解决这个问题。
+
+###Reference:###
+[1] [http://www.ibm.com/developerworks/cn/opensource/os-cn-spring-cache/index.html](http://www.ibm.com/developerworks/cn/opensource/os-cn-spring-cache/index.html)
+
