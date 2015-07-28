@@ -160,6 +160,17 @@ public class AccountService {
 
 注意，此类的 getAccountByName 方法上有一个注释 annotation，即 @Cacheable(value=”accountCache”)，这个注释的意思是，当调用这个方法的时候，会从一个名叫 accountCache 的缓存中查询，如果没有，则执行实际的方法（即查询数据库），并将执行的结果存入缓存中，否则返回缓存中的对象。这里的缓存中的 key 就是参数 userName，value 就是 Account 对象。“accountCache”缓存是在 spring*.xml 中定义的名称。
 
+***注意：@Cacheable也可以定义类级别的缓存，放在类注解的位置，这样，每当调用该类的任意方法时，只要传入的参数相同，Spring就会使用缓存。***
+
+@Cacheable可指定如下属性：  
+
+- **value**：必须属性。该属性可指定多个缓存区的名字，用于指定将<font color="red">方法返回值</font>放入指定的缓存区内。
+- **key**：通过SpEL表达式显式指定缓存的key。例：`#age`
+- **condition**：该属性指定一个返回boolean值的SpEL表达式，只有当该表达式返回true时，Spring才会缓存方法返回值。例：`#age<18`
+- **unless**：该属性指定一个返回boolean值的SpEL表达式，当该表达式返回true时，Spring就不缓存方法返回值。
+
+***@CachePut和@Cacheable拥有相同的属性，不过@CachePut每次都是要执行方法，然后把方法返回值缓存到缓存区，不是直接从缓存区读取，即“更新”操作。***
+
 好，因为加入了 spring，所以我们还需要一个 spring 的配置文件来支持基于注释的缓存：  
 
 ```xml
@@ -322,6 +333,14 @@ real querying db...somebody2
 
 结果和期望的一致，所以，可以看出，spring cache 清空缓存的方法很简单，就是通过 @CacheEvict 注释来标记要清空缓存的方法，当这个方法被调用后，即会清空缓存。注意其中一个 @CacheEvict(value=”accountCache”, key=”#account.getName()”)，其中的 Key 是用来指定缓存的 key 的，这里因为我们保存的时候用的是 account 对象的 name 字段，所以这里还需要从参数 account 对象中获取 name 的值来作为 key，前面的 # 号代表这是一个 SpEL 表达式，此表达式可以遍历方法的参数对象，具体语法可以参考 Spring 的相关文档手册。  
 
+@CacheEvict用于清空缓存，属性有：
+
+- **value**：必须属性。用于指定该方法用于清除哪个缓存区的数据。
+- **allEntries**：该属性指定是否清空整个缓存区。(只能填`true` or `false`)
+- **beforeInvocation**：该属性指定是否在执行方法之前清除缓存。默认是在方法成功完成之后才清除缓存。(只能填`true` or `false`)
+- **condition**：该属性指定一个SpEL表达式，只有当该表达式为true时才清除缓存。
+- **key**：通过SpEL表达式显式指定缓存的key。
+
 ##如何按照条件操作缓存##
 前面介绍的缓存方法，没有任何条件，即所有对 accountService 对象的 getAccountByName 方法的调用都会起动缓存效果，不管参数是什么值，如果有一个需求，就是只有账号名称的长度小于等于 4 的情况下，才做缓存，大于 4 的不使用缓存，那怎么实现呢？
 
@@ -468,6 +487,7 @@ real updating db...someone
 |value	|缓存的名称，在 spring 配置文件中定义，必须指定至少一个|例如：@Cacheable(value=“mycache”)  或者  @Cacheable(value={“cache1”, “cache2”}|
 |key|缓存的 key，可以为空，如果指定要按照 SpEL 表达式编写，如果不指定，则缺省按照方法的所有参数进行组合|例如：@Cacheable(value=“testcache”, key=“#userName”)|
 |condition|缓存的条件，可以为空，使用 SpEL 编写，返回 true 或者 false，只有为 true 才进行缓存|例如：@Cacheable(value=“testcache”, condition=“#userName.length()>2”)|
+|unless|（与condition含义刚好相反）|（略）|
 
 ###@CachePut###
 @CachePut: 主要针对方法配置，能够根据方法的请求参数对其结果进行缓存，和 @Cacheable 不同的是，它每次都会触发真实方法的调用
@@ -477,6 +497,7 @@ real updating db...someone
 |value	|缓存的名称，在 spring 配置文件中定义，必须指定至少一个|例如：@CachePut(value=“mycache”)  或者 @CachePut(value={“cache1”, “cache2”}|
 |key|缓存的 key，可以为空，如果指定要按照 SpEL 表达式编写，如果不指定，则缺省按照方法的所有参数进行组合|例如：@CachePut(value=“testcache”, key=“#userName”)|
 |condition|缓存的条件，可以为空，使用 SpEL 编写，返回 true 或者 false，只有为 true 才进行缓存|例如：@CachePut(value=“testcache”, condition=“#userName.length()>2”)|
+|unless|（与condition含义刚好相反）|（略）|
 
 ###@CacheEvict###
 @CacheEvict: 主要针对方法配置，能够根据一定的条件对缓存进行清空
