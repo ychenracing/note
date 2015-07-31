@@ -11,13 +11,47 @@
 ***持久性***  
 一旦事务完成，事务的结果应该持久化。一般会涉及将结果存储到数据库或其他形式的持久化存储中。
 
-
 **原子性和隔离性来保证一致性，最后，结果是持久化的。**
+
+##全局事务和局部事务两种策略##
+###全局事务###
+跨多个事务性资源（比如多个数据库或消息队列）。
+###局部事务###
+和底层所采用的持久化技术有关，不能保证跨多个事务性资源的多个事务执行的正确性。
+
+spring使用PlatformTransactionManager接口来管理事务，spring提供的只是具体的事务管理的PlatformTransactionManager的包装实现，采用了策略模式，使得从应用程序猿看来，spring提供的该事务管理操作与平台无关。
+
+使用jdbc局部事务时，PlatformTransactionManager包装了DataSourceTransactionManager，JTA全局事务则是JtaTransactionManager。
+
+```java
+public interface PlatformTransactionManager{
+    // 平台无关的获得事务的方法
+    TransactionStatus getTransaction(TransactionDefinition definition) throws TransactionException;
+    // 平台无关的事务提交方法
+    void commit(TransactionStatus status) throws TransactionException;
+    // 平台无关的事务回滚方法
+    void rollback(TransactionStatus status) throws TransactionException;
+}
+```
+
+其中，TransactionStatus接口代表事务本身，TransactionDefinition接口代表事务规则，其有隔离、传播、超时、只读等几个属性必须设置。
+
+```java
+public interface TransactionStatus{
+    // 判断事务是否为新建的事务
+    boolean isNewTransaction();
+    // 设置事务回滚
+    void setRollbackOnly();
+    // 查询事务是否已有回滚标志
+    boolean isRollbackOnly();
+}
+```
+
+##两种事务方式##
 
 声明式事务：大多数情况下比编程式事务管理更好用。它将事务管理代码从业务方法中分离出来，以声明的方式来实现事务管理。事务管理作为一种横切关注点，可以通过AOP方法模块化。Spring通过Spring AOP框架支持声明式事务管理。
 
 编程式事务：将事务管理代码嵌入到业务方法中来控制事务的提交和回滚，在编程式事务中，必须在每个业务操作中包含额外的事务管理代码。
-
 
 当事务方法被另一个事务方法调用时，必须指定事务应该如何传播。例如：方法可能继续在现有事务中运行，也可能开启一个新事务，并在自己的事务中运行。
 
@@ -31,7 +65,7 @@
 |PROPAGATION\_REQUIRED_NEW|表示当前方法必须运行在它自己的事务中。一个新的事务将被启动。如果存在当前事务，在该方法执行期间，当前事务会被挂起。如果使用JTATransactionManager的话，则需要访问TransactionManager。|
 |PROPAGATION_SUPPORTS|表示当前方法不需要事务上下文，但是如果存在当前事务的话，那么该方法会在这个事务中运行。|
 
-##示例##
+##使用@Transactional的jdbc局部事务示例##
 prepare：三个数据表  
 
 ```
