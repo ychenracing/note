@@ -47,6 +47,16 @@ public interface TransactionStatus{
 }
 ```
 
+再加上
+
+```xml
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager"
+        p:dataSource-ref="mydatasource" />
+		
+    <!-- 根据annotation来生成事务代理 -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+```
+
 ##两种事务方式##
 
 声明式事务：大多数情况下比编程式事务管理更好用。它将事务管理代码从业务方法中分离出来，以声明的方式来实现事务管理。事务管理作为一种横切关注点，可以通过AOP方法模块化。Spring通过Spring AOP框架支持声明式事务管理。
@@ -57,9 +67,9 @@ public interface TransactionStatus{
 
 |传播行为|含义|
 |-------|---|
-|PROPAGATION_MANDATORY|表示该方法必须在事务中运行，如果当前事务不存在，则会抛出一个异常。|
+|PROPAGATION_MANDATORY|要求调用该方法的线程必须处于事务环境中，否则抛出异常。|
 |PROPAGATION_NESTED|表示如果当前方法正有一个事务在运行中，则该方法应该运行在一个嵌套事务中，被嵌套的事务可以独立于被封装的事务中进行提交或者回滚。<font color="red">如果封装事务存在，并且外层事务抛出异常回滚，那么内层事务必须回滚，反之，内层事务并不影响外层事务。如果封装事务不存在，则同PROPAGATION_REQUIRED的一样。</font>|
-|PROPAGATION_NEVER|表示当前方法不应该运行在事务上下文中。如果当前正有一个事务在运行，则会抛出异常|
+|PROPAGATION_NEVER|表示当前方法不应该运行在事务上下文中。如果调用该方法的线程处在一个事务中，会抛出异常|
 |PROPAGATION\_NOT_SUPPORTED|表示该方法不应该运行在事务中。如果存在当前事务，在该方法运行期间，当前事务将被挂起。如果使用JTATransactionManager的话，则需要访问TransactionManager。|
 |PROPAGATION_REQUIRED|表示当前方法必须运行在事务中。如果当前事务存在，方法将会在该事务中运行。否则，会启动一个新的事务。（<font color="red">如果被调用端发生异常，那么调用端和被调用端事务都将回滚</font>）|
 |PROPAGATION\_REQUIRED_NEW|表示当前方法必须运行在它自己的事务中。一个新的事务将被启动。如果存在当前事务，在该方法执行期间，当前事务会被挂起。如果使用JTATransactionManager的话，则需要访问TransactionManager。|
