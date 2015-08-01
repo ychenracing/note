@@ -19,9 +19,9 @@
 ###局部事务###
 和底层所采用的持久化技术有关，不能保证跨多个事务性资源的多个事务执行的正确性。
 
-spring使用PlatformTransactionManager接口来管理事务，spring提供的只是具体的事务管理的PlatformTransactionManager的包装实现，采用了策略模式，使得从应用程序猿看来，spring提供的该事务管理操作与平台无关。
+Spring使用PlatformTransactionManager接口来管理事务，Spring提供的只是具体的事务管理的PlatformTransactionManager的包装实现，采用了策略模式，使得从应用程序猿看来，Spring提供的该事务管理操作与平台无关。
 
-使用jdbc局部事务时，PlatformTransactionManager包装了DataSourceTransactionManager，JTA全局事务则是JtaTransactionManager。
+使用jdbc局部事务时，PlatformTransactionManager包装了DataSourceTransactionManager；JTA全局事务则是JtaTransactionManager。
 
 ```java
 public interface PlatformTransactionManager{
@@ -50,6 +50,13 @@ public interface TransactionStatus{
 再加上
 
 ```xml
+    <bean id="mydatasource" class="org.apache.commons.dbcp.BasicDataSource">
+		<property name="driverClassName" value="org.mariadb.jdbc.Driver" />
+		<property name="url" value="jdbc:mysql://localhost:3306/test" />
+		<property name="username" value="root" />
+		<property name="password" value="root" />
+	</bean>
+	
     <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager"
         p:dataSource-ref="mydatasource" />
 		
@@ -62,6 +69,8 @@ public interface TransactionStatus{
 声明式事务：大多数情况下比编程式事务管理更好用。它将事务管理代码从业务方法中分离出来，以声明的方式来实现事务管理。事务管理作为一种横切关注点，可以通过AOP方法模块化。Spring通过Spring AOP框架支持声明式事务管理。
 
 编程式事务：将事务管理代码嵌入到业务方法中来控制事务的提交和回滚，在编程式事务中，必须在每个业务操作中包含额外的事务管理代码。
+
+***下面讲的都是声明式事务***
 
 当事务方法被另一个事务方法调用时，必须指定事务应该如何传播。例如：方法可能继续在现有事务中运行，也可能开启一个新事务，并在自己的事务中运行。
 
