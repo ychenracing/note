@@ -145,3 +145,34 @@ public class UserController {
     }
 }
 ```
+
+
+##Spring 后处理器##
+###BeanPostProcessor###
+bean后处理器，对容器中的bean进行后处理增强。
+实现BeanPostProcessor即可，Spring会在每次创建该bean的时候，进行bean后处理增强。  
+
+postProcessBeforeInitialization(Object bean, String beanName)会对bean初始化之前进行后处理增强，参数bean即是被增强的bean，beanName是bean的id。  
+
+postProcessAfterInitialization(Object bean, String beanName)会对bean初始化之后进行后处理增强，参数bean即是被增强的bean，beanName是bean的id。
+
+被增强处理的Bean类还可实现InitializingBean接口，实现其afterPropertiesSet()方法。
+
+然后在spring配置文件中注册该BeanPostProcessor实现即可，spring会自动注册和采用该Bean后处理器。
+
+然后调用的先后关系：  
+
+
+
+1. 先spring创建bean，分配存储空间。
+2. 注入依赖。spring设置bean的属性。
+3. （想要初始化。）调用BeanPostProcessor的postProcessBeforeInitialization()方法。
+4. （开始初始化。）调用InitializingBean的afterPropertiesSet()方法。
+5. 调用初始化方法。
+6. （初始化之后。）调用BeanPostProcessor的postProcessAfterInitialization()方法。
+
+**用处**  
+增强处理，生成proxy。
+
+###BeanFactoryPostProcessor###
+对spring容器进行增强处理。
