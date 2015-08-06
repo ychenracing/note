@@ -63,3 +63,47 @@ id    name       id    name
 null  null       1     Rutabaga
 null  null       3     Darth Vader
 </code></pre>
+
+##explain select 语句##
+explain 可以分析后面的select语句的执行情况
+
+```sql
+mysql> explain select * from pre_common_member where email like '1%'\G
+*************************** 1. row ***************************
+           id: 1
+  select_type: SIMPLE
+        table: pre_common_member
+         type: range
+possible_keys: email
+          key: email
+      key_len: 120
+          ref: NULL
+         rows: 4
+        Extra: Using index condition
+1 row in set (0.00 sec)
+```
+
+```
+id:表示select语句的编号
+select_type:表示select语句的类型
+    常用取值：
+        SIMPLE表示简单查询，不包括连接查询和子查询
+        primary表示主查询，或者最外层的查询语句
+        union表示连接查询的第二个或后面的查询语句
+table:表示查询的表
+type:表示表的连接查询
+    常用取值：
+        const表示表中有多条记录，但是表中只查询一条记录
+        all表示对表进行了完整的扫描
+        eq_ref表示多表连接，后面的表使用了UNIQUE或者primary key;
+        ref表示多表查询时，后面的表使用了普通索引。
+        unique_subquery表示子查询中使用了普通索引；
+        range表示查询语句中给出了查询范围；
+        index表示对表中的索引进行了完整的扫描
+possible_keys:查询中可能使用的索引
+key:表示查询使用到的索引
+key_len:索引字段的长度
+ref:表示使用哪个列或常数与索引一起来查询记录
+rows:表示查询到的行数；
+extra:表示查询过程中的附加信息
+```
