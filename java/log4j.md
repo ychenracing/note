@@ -30,3 +30,58 @@
 所谓Fatal，那就是相当严重的了，可以肯定这种错误已经无法修复，并且如果系统继续运行下去的话，可以肯定必然会越来越乱。这时候采取的最好的措施不是试图将系统状态恢复到正常，而是尽可能地保留系统有效数据并停止运行。
 
 也就是说，选择 Warn、Error、Fatal 中的具体哪一个，是根据当前的这个问题对以后可能产生的影响而定的，如果对以后基本没什么影响，则警告之，如果肯定是以后要出严重问题的了，则Fatal之，拿不准会怎么样，则 Error 之。
+
+web.xml中添加：
+
+```xml
+   <context-param>     
+      <param-name>log4jConfigLocation</param-name>     
+      <param-value>/WEB-INF/props/log4j.properties</param-value>     
+   </context-param>     
+   <context-param>     
+      <param-name>log4jRefreshInterval</param-name>     
+      <param-value>6000</param-value>     
+   </context-param>
+
+    <listener> 
+      <listener-class> 
+         org.springframework.web.util.Log4jConfigListener 
+      </listener-class> 
+   </listener>
+```
+
+
+```sh
+# log4j.properties
+### set log levels ###
+log4j.rootLogger = debug, stdout, D, E
+
+### 输出到控制台 ###
+log4j.appender.stdout = org.apache.log4j.ConsoleAppender
+log4j.appender.stdout.Target = System.out
+log4j.appender.stdout.layout = org.apache.log4j.PatternLayout
+log4j.appender.stdout.layout.ConversionPattern =  %d{ABSOLUTE} %5p %c{1}:%L-%m%n
+
+### 输出到日志文件 ###
+log4j.appender.D = org.apache.log4j.DailyRollingFileAppender
+log4j.appender.D.encoding=UTF-8
+log4j.appender.D.File = logs/ychen.log
+log4j.appender.D.MaxFileSize=10MB 
+log4j.appender.D.DatePattern = '.'yyyy-MM-dd 
+log4j.appender.D.Append = true
+log4j.appender.D.Threshold = DEBUG ## 输出DEBUG级别以上的日志
+log4j.appender.D.layout = org.apache.log4j.PatternLayout
+log4j.appender.D.layout.ConversionPattern = [%p] %-d{yyyy-MM-dd HH:mm:ss} [%t:%r]-[%p] %m%n
+
+### 保存异常信息到单独文件 ###
+log4j.appender.E = org.apache.log4j.DailyRollingFileAppender
+log4j.appender.E.encoding=UTF-8
+## 异常日志文件名
+log4j.appender.E.File = logs/ychen-error.log
+log4j.appender.E.MaxFileSize=10MB 
+log4j.appender.E.DatePattern = '.'yyyy-MM-dd 
+log4j.appender.E.Append = true
+log4j.appender.E.Threshold = ERROR ## 只输出ERROR级别以上的日志!!!
+log4j.appender.E.layout = org.apache.log4j.PatternLayout
+log4j.appender.E.layout.ConversionPattern = [%p] %-d{yyyy-MM-dd HH:mm:ss} [%l:%c:%t:%r]-[%p] %m%n
+```
