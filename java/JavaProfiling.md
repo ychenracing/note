@@ -24,7 +24,9 @@ jstat -gcnewcapacity 2764 250 20
 jstat -gcoldcapacity 2764 250 20
 jstat -gcpermcapacity 2764 250 20
 jstat -gcutil 2764 250 20
+# 类加载情况的统计
 jstat -class 2764 250 20
+# hotspot中JIT编译情况的统计
 jstat -compiler 2764 250 20
 jstat -printcompilation 2764 250 20
 ```
@@ -50,11 +52,23 @@ jmap [option] [server-id@]remote-hostname-or-ip
 ```
 
 ```sh
+options:
+-dump：[live,]format=b,file=<filename> 使用hprof二进制形式,输出jvm的heap内容到文件=. live子选项是可选的，假如指定live选项,那么只输出活的对象到文件；
+-finalizerinfo：打印正等候回收的对象的信息；
+-heap：打印heap的概要信息，GC使用的算法，heap的配置及wise heap的使用情况；
+-histo：[:live] 打印每个class的实例数目,内存占用,类全名信息. VM的内部类名字开头会加上前缀”*”. 如果live子参数加上后,只统计活的对象数量；
+-clstats：打印classloader和jvm heap长久层的信息。 包含每个classloader的名字,父classloader和加载的class数量。另外,内部String的数量和占用内存数也会打印出来；
+-F：强迫.在pid没有相应的时候使用-dump或者-histo参数。在这个模式下,live子参数无效；
+-h： | -help 打印辅助信息；
+-J ：传递参数给jmap启动的jvm；
+```
+
+```sh
 #显示java进程内存使用的相关信息 
 jmap pid #打印内存使用的摘要信息 
 jmap –heap pid #java heap信息 
 jmap -histo:live pid #统计对象count ，live表示在使用 
-jmap -histo pid >mem.txt #打印比较简单的各个有多少个对象占了多少内存的信息，一般重定向的文件 
+jmap -histo pid > mem.txt #打印比较简单的各个有多少个对象占了多少内存的信息，一般重定向的文件 
 jmap -dump:format=b,file=mem.dat pid #将内存使用的详细情况输出到mem.dat 文件 
 ```
 
@@ -78,4 +92,26 @@ Started HTTP server on port 7000
 Server is ready.
 
 # 最后两句话说明开启了http服务，在7000端口，然后打开浏览器输入http://localhost:7000就能看到jhat结果
+```
+
+###jinfo###
+jinfo可以**输出并修改**运行时的java进程的options。用处比较简单，用于输出JAVA系统参数及命令行参数。用法是`jinfo -opt  pid` 如：查看2788的MaxPerm大小可以用`jinfo -flag MaxPermSize 2788`。
+
+```sh
+Usage:
+    jinfo [option] <pid>
+        (to connect to running process)
+    jinfo [option] <executable <core>
+        (to connect to a core file)
+    jinfo [option] [server_id@]<remote server IP or hostname>
+        (to connect to remote debug server)
+
+where <option> is one of:
+    -flag <name>         to print the value of the named VM flag
+    -flag [+|-]<name>    to enable or disable the named VM flag
+    -flag <name>=<value> to set the named VM flag to the given value
+    -flags               to print VM flags
+    -sysprops            to print Java system properties
+    <no option>          to print both of the above
+    -h | -help           to print this help message
 ```
