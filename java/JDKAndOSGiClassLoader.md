@@ -51,7 +51,7 @@ protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundE
 
 1. 遇到类加载请求时，首先查找已加载的类，找到的话会解析返回，没有则2。
 2. 如果父类加载器不为空，委托给父类加载器加载，否则自己就是`Bootstrap ClassLoader`，查找`Bootstrap ClassLoader`，让其加载。
-3. 要是2也找不到，则抛出`ClassNotFoundException`，吞掉，用加载自己的类加载器加载。
+3. 要是2也找不到，可能抛出`ClassNotFoundException`，吞掉，用加载自己的类加载器加载。
 
 ###JDK中ClassLoader中比较重要的方法###
 
@@ -150,6 +150,162 @@ Tomcat5,6,7的ClassLoader结构略有不同。
 
 首先看前三个问题:  
 从上图可以看出，为了解决jar隔离和共享的问题。对于每个webapp,Tomcat都会创建一个WebAppClassLoader来加载应用，这样就保证了每个应用加载进来的class都是不同的(因为ClassLoader不同)! 而共享的jar放在tomcat-home/lib目录下，由CommonClassLoader来加载。通过双亲委托模式，提供给其下的所有webapp共享。
+
+tomcat中loadClass源码：
+
+```java
+public synchronized Class<?> loadClass(String name, boolean resolve)
+    throws ClassNotFoundException {
+
+    if (log.isDebugEnabled())
+        log.debug("loadClass(" + name + ", " + resolve + ")");
+    Class<?> clazz = null;
+
+    // Log access to stopped classloader
+    if (!started) {
+        try {
+            throw new IllegalStateException();
+        } catch (IllegalStateException e) {
+            log.info(sm.getString("webappClassLoader.stopped", name), e);
+        }
+    }
+
+    // (0) Check our previously loaded local class cache
+    // 1 
+    clazz = findLoadedClass0(name);
+    if (clazz != null) {
+        if (log.isDebugEnabled())
+            log.debug("  Returning class from cache");
+        if (resolve)
+            resolveClass(clazz);
+        return (clazz);
+    }
+
+    // (0.1) Check our previously loaded class cache
+    // 2
+    clazz = findLoadedClass(name);
+    if (clazz != null) {
+        if (log.isDebugEnabled())
+            log.debug("  Returning class from cache");
+        if (resolve)
+            resolveClass(clazz);
+        return (clazz);
+    }
+
+    // (0.2) Try loading the class with the system class loader, to prevent
+    //       the webapp from overriding J2SE classes
+    // 3 
+    try {
+        clazz = system.loadClass(name);
+        if (clazz != null) {
+            if (resolve)
+                resolveClass(clazz);
+            return (clazz);
+        }
+    } catch (ClassNotFoundException e) {
+        // Ignore
+    }
+
+    // (0.5) Permission to access this class when using a SecurityManager
+    if (securityManager != null) {
+        int i = name.lastIndexOf('.');
+        if (i >= 0) {
+            try {
+                securityManager.checkPackageAccess(name.substring(0,i));
+            } catch (SecurityException se) {
+                String error = "Security Violation, attempt to use " +
+                    "Restricted Class: " + name;
+                log.info(error, se);
+                throw new ClassNotFoundException(error, se);
+            }
+        }
+    }
+
+    //4 
+    boolean delegateLoad = delegate || filter(name);
+
+    // (1) Delegate to our parent if requested
+    // 5 
+    if (delegateLoad) {
+        if (log.isDebugEnabled())
+            log.debug("  Delegating to parent classloader1 " + parent);
+        ClassLoader loader = parent;
+        if (loader == null)
+            loader = system;
+        try {
+            clazz = Class.forName(name, false, loader);
+            if (clazz != null) {
+                if (log.isDebugEnabled())
+                    log.debug("  Loading class from parent");
+                if (resolve)
+                    resolveClass(clazz);
+                return (clazz);
+            }
+        } catch (ClassNotFoundException e) {
+            // Ignore
+        }
+    }
+
+    // (2) Search local repositories
+    if (log.isDebugEnabled())
+        log.debug("  Searching local repositories");
+    // 6 
+    try {
+        clazz = findClass(name);
+        if (clazz != null) {
+            if (log.isDebugEnabled())
+                log.debug("  Loading class from local repository");
+            if (resolve)
+                resolveClass(clazz);
+            return (clazz);
+        }
+    } catch (ClassNotFoundException e) {
+        // Ignore
+    }
+
+    // (3) Delegate to parent unconditionally
+    // 7
+    if (!delegateLoad) {
+        if (log.isDebugEnabled())
+            log.debug("  Delegating to parent classloader at end: " + parent);
+        ClassLoader loader = parent;
+        if (loader == null)
+            loader = system;
+        try {
+            clazz = Class.forName(name, false, loader);
+            if (clazz != null) {
+                if (log.isDebugEnabled())
+                    log.debug("  Loading class from parent");
+                if (resolve)
+                    resolveClass(clazz);
+                return (clazz);
+            }
+        } catch (ClassNotFoundException e) {
+            // Ignore
+        }
+    }
+
+    throw new ClassNotFoundException(name);
+
+}
+```
+
+1. 标注1(第18行)代码，首先从当前ClassLoader的本地缓存中加载类，如果找到则返回。
+2. 标注2(第29行)代码，在本地缓存没有的情况下，调用ClassLoader的findLoadedClass方法查看jvm是否已经加载过此类，如果已经加载则直接返回。
+3. 标注3(第41行)代码，通过系统的类加载器加载此类（用来加载JDK类库中的类），这里防止应用写的类覆盖了J2SE的类,这句代码非常关键，如果不写的话，就会造成你自己写的类有可能会把J2SE的类给替换调，另外假如你写了一个javax.servlet.Servlet类，放在当前应用的WEB-INF/class中，如果没有此句代码的保证，那么你自己写的类就会替换到Tomcat容器Lib中包含的类。
+4. 标注4(第68行)代码，判断是否需要委托给父类加载器进行加载，delegate属性默认为false，那么delegatedLoad的值就取决于filter的返回值了，filter方法中根据包名来判断是否需要进行委托加载，默认情况下会返回false.因此delegatedLoad为false
+5. 标注5(第72行)代码，因为delegatedLoad为false,那么此时不会委托父加载器去加载，这里其实是没有遵循parent-first的加载机制，这里是自己（这里的自己就是当前的webappclassloader）尝试加载类。
+6. 标注6(第96行)调用findClass方法在webapp级别进行加载。即第5点说的自己用自己的webappclassloader尝试加载类。
+7. 标注7(第111行)如果还是没有加载到类，并且不采用委托机制的话，则通过父类加载器去加载。
+
+**所以tomcat加载类的顺序是：**  
+当应用需要到某个类时，则会按照下面的顺序进行类加载：
+
+1. 使用bootstrap引导类加载器加载
+2. 使用system系统类加载器加载
+3. 使用应用类加载器在WEB-INF/classes中加载
+4. 使用应用类加载器在WEB-INF/lib中加载
+5. 使用common类加载器在CATALINA_HOME/lib中加载
 
 **特别说明**  
 对于WebAppClassLoader是违反双亲委托模型的。如果加载的是jre或者servlet api则依然是双亲委托模型。 而如果不是的话，则会先尝试自行加载，如果找不到再委托父加载器加载。 这个应该是可以理解的，因为应用的class是由WebAppClassLoader加载的，是项目私有的。
