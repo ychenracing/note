@@ -31,9 +31,59 @@
 
 也就是说，选择 Warn、Error、Fatal 中的具体哪一个，是根据当前的这个问题对以后可能产生的影响而定的，如果对以后基本没什么影响，则警告之，如果肯定是以后要出严重问题的了，则Fatal之，拿不准会怎么样，则 Error 之。
 
+###Servlet中使用log4j###
+在web.xml中配置Log4jInit的servlet，
+
+```xml
+<servlet>
+		<servlet-name>Log4jInit</servlet-name>
+		<servlet-class>cn.edu.fudan.iipl.flyvar.logging.Log4jInit</servlet-class>
+
+		<init-param>
+			<param-name>Log4jpro</param-name>
+			<param-value>/WEB-INF/log4j.properties</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+```
+
+然后，在Log4jInit中重载init方法：
+
+```java
+    @Override
+    public void init(ServletConfig config) throws ServletException {
+        System.out.println("Log4JInitServlet 正在初始化 log4j日志设置信息");
+        String log4jLocation = config.getInitParameter("Log4jpro");
+
+        ServletContext sc = config.getServletContext();
+
+        if (log4jLocation == null) {
+            System.err.println("*** 没有 Log4jpro 初始化的文件, 所以使用 BasicConfigurator初始化");
+            BasicConfigurator.configure();
+        } else {
+            String webAppPath = sc.getRealPath("/");
+            String log4jProp = webAppPath + log4jLocation;
+            File log4jPropFile = new File(log4jProp);
+            if (log4jPropFile.exists()) {
+                System.out.println("使用: " + log4jProp + "初始化日志设置信息");
+                PropertyConfigurator.configure(log4jProp);
+            } else {
+                System.err.println("*** " + log4jProp + " 文件没有找到， 所以使用 BasicConfigurator初始化");
+                BasicConfigurator.configure();
+            }
+        }
+        super.init(config);
+    }
+```
+
+###Spring中使用log4j###
 web.xml中添加：
 
 ```xml
+   <context-param>
+	  <param-name>webAppRootKey</param-name>
+	  <param-value>ychen.root</param-value>
+   </context-param>
    <context-param>     
       <param-name>log4jConfigLocation</param-name>     
       <param-value>/WEB-INF/props/log4j.properties</param-value>     
@@ -65,11 +115,12 @@ log4j.appender.stdout.layout.ConversionPattern =  %d{ABSOLUTE} %5p %c{1}:%L-%m%n
 ### 输出到日志文件 ###
 log4j.appender.D = org.apache.log4j.DailyRollingFileAppender
 log4j.appender.D.encoding=UTF-8
-log4j.appender.D.File = logs/ychen.log
+log4j.appender.D.File = ${ychen.root}/logs/ychen.log
 log4j.appender.D.MaxFileSize=10MB 
 log4j.appender.D.DatePattern = '.'yyyy-MM-dd 
 log4j.appender.D.Append = true
-log4j.appender.D.Threshold = DEBUG ## 输出DEBUG级别以上的日志
+## 输出DEBUG级别以上的日志
+log4j.appender.D.Threshold = DEBUG
 log4j.appender.D.layout = org.apache.log4j.PatternLayout
 log4j.appender.D.layout.ConversionPattern = [%p] %-d{yyyy-MM-dd HH:mm:ss} [%t:%r]-[%p] %m%n
 
@@ -77,11 +128,12 @@ log4j.appender.D.layout.ConversionPattern = [%p] %-d{yyyy-MM-dd HH:mm:ss} [%t:%r
 log4j.appender.E = org.apache.log4j.DailyRollingFileAppender
 log4j.appender.E.encoding=UTF-8
 ## 异常日志文件名
-log4j.appender.E.File = logs/ychen-error.log
+log4j.appender.E.File = ${ychen.root}/logs/ychen-error.log
 log4j.appender.E.MaxFileSize=10MB 
 log4j.appender.E.DatePattern = '.'yyyy-MM-dd 
 log4j.appender.E.Append = true
-log4j.appender.E.Threshold = ERROR ## 只输出ERROR级别以上的日志!!!
+## 只输出ERROR级别以上的日志!!!
+log4j.appender.E.Threshold = ERROR
 log4j.appender.E.layout = org.apache.log4j.PatternLayout
 log4j.appender.E.layout.ConversionPattern = [%p] %-d{yyyy-MM-dd HH:mm:ss} [%l:%c:%t:%r]-[%p] %m%n
 ```
