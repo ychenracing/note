@@ -176,3 +176,98 @@ postProcessAfterInitialization(Object bean, String beanName)会对bean初始化�
 
 ###BeanFactoryPostProcessor###
 对spring容器进行增强处理。
+
+##Spring整合Mybatis##
+mybatis整合spring最简单的理解就是***把mybatis数据源的配置、事务的管理、SqlSessionFactory的创建以及数据映射器接口Mapper的创建交由spring去管理***，所以mybatis的配置文件mybatis-config.xml中不需要再配置数据源及事务，在业务层service实现时不需要手动地获取SqlSession以及对应的数据映射器接口Mapper，通过spring的注入即可。
+
+然而，使用mybatis注解可以直接省略mybatis-config.xml配置。例如，
+
+- 首先，定义一个注解。注解用来标识dao接口：   
+
+``` java
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import org.springframework.stereotype.Component;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+@Documented
+@Component
+public @interface MyBatisDao {
+    String value() default "";
+}
+```   
+- 在spring的配置文件中配置MapperScannerConfigurer：
+
+```xml
+	<!--把mybatis SqlSessionFactory的创建交由spring管理 -->
+	<bean id="sqlsessionfactorybean" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="mydatasource"></property>
+		<property name="mapperLocations" value="classpath:cn/edu/fudan/iipl/mapper/*.xml"></property>
+	</bean>
+
+	<!-- DAO接口所在包名，Spring会自动查找其下用MyBatisDao注解的类 -->
+	<bean id="mapperscannerconfigurer" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="cn.edu.fudan.iipl"></property>
+		<property name="annotationClass" value="cn.edu.fudan.iipl.annotation.MyBatisDao"></property>
+		<property name="sqlSessionFactoryBeanName" value="sqlsessionfactorybean"></property>
+	</bean>
+```
+
+然后，用注解@MyBatisDao标注在dao接口上即可，mybatis会把该接口与mapper对应起来。
+
+如果想启用spring的事务，可以使用：
+
+```xml
+	<!--把mybatis的事务交由spring去管理 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="mydatasource" /><!--注意：此处的数据源要与sqlSessionFactory中的dataSource相同 -->
+	</bean>
+
+	<!--启用spring @Transactional注解 -->
+	<tx:annotation-driven />
+```
+
+##一级缓存与二级缓存##
+mybatis一级缓存是指同一个session的方法，第一次与数据库交互，第二次使用缓存，不同session则都是每个session的第一次都是与数据库交互。二级缓存是指不同session，只要调用的方法、参数相同，那么就是总的第一次交互数据库，第二次使用缓存。
+
+mybatis开启二级缓存：
+
+- 在mapper文件中写上： 
+
+```xml
+<cache eviction="LRU" size="1024" readOnly="true"></cache>
+```
+
+- 在select、update、insert、delete等语句上写上：
+
+```xml
+	<select id="getAll" resultMap="articleMap" flushCache="false"
+		useCache="true">
+		select * from article
+	</select>
+	
+	<update id="updateArticle" parameterType="cn.edu.fudan.iipl.entity.Article"
+		flushCache="true">
+		update article set
+		title=#{title},mainbody=#{mainBody},category=#{category},author=#{author},gmt_modify=#{gmtModify}
+		where id=#{id}
+	</update>
+	
+	<insert id="addArticle" parameterType="cn.edu.fudan.iipl.entity.Article"
+		useGeneratedKeys="true" keyProperty="id" flushCache="true">
+		insert into
+		article(title,mainbody,category,author,gmt_create,gmt_modify)
+		values(#{title},#{mainBody},#{category},#{author},#{gmtCreate},#{gmtModify})
+	</insert>
+
+	<delete id="deleteById" parameterType="int" flushCache="true">
+		delete
+		from article where id=#{id}
+	</delete>
+```
