@@ -568,3 +568,53 @@ SynchronousQueue的一个使用场景是在线程池里。Executors.newCachedThr
 **使用场景**：非常大或无界的线程池、有界但是有拒绝策略的线程池，其他场景则无意义。
 
 **作用**：同步移交。当有新任务到达，新任务想要进入SynchronousQueue中，必须有一个线程在等待；如果没有线程在等待，并且线程池的当前大小小于最大大小，那么将创建一个线程，SynchronousQueue把任务移交到这个新创建的线程中（线程从SynchronousQueue中get）；如果没有线程在等待，并且线程池的当前大小等于最大大小，那么将使用拒绝策略处理这个新到达的任务。所以，只是一种同步移交的作用。如果使用直接移交（即不使用SynchronousQueue，那么效率会更高，问题？线程数增多，上下文切换频繁，开销大）。
+
+##CompletionService##
+###ExecutorCompletionService###
+####批处理任务获取结果####
+一开始，我是用ExecutorService一直execute提交任务，任务执行过程中，每个任务把自己的结果加入一个共享的synchronizedList中。获取所有结果的做法是：让executorService.awaitTermination()等待一个很长的时间。该函数作用是：如果等待的过程中，所有任务都已完成，则会立即返回；如果有至少一个任务还在运行，则会继续等待，然后等待到超时返回。
+
+一个更好的做法是：
+
+对每个executorService提交的任务，新建一个Future引用到它，等到最后任务都全部提交了，再迭代future列表一个一个获取结果。这样就能确保获取全部的结果，不会出现还有任务在运行但是把结果返回出去了。很容易想到的是用BlockingQueue和Future结合。
+
+更好的做法是：CompletionService
+
+如果你向Executor提交了一个批处理任务，并且希望在它们完成后获得结果。为此你可以保存与每个任务相关联的Future，然后不断地调用timeout为零的get，来检验Future是否完成。这样做固然可以，但却相当乏味。幸运的是，还有一个更好的方法：完成服务(Completion service)。
+
+CompletionService整合了Executor和BlockingQueue的功能。你可以将Callable任务提交给它去执行，然后使用类似于队列中的take和poll方法，在结果完整可用时获得这个结果，像一个打包的Future。ExecutorCompletionService是实现CompletionService接口的一个类，并将计算任务委托给一个Executor。
+
+ExecutorCompletionService的实现相当直观。它在构造函数中创建一个BlockingQueue，用它去保持完成的结果。计算完成时会调用FutureTask中的done方法。当提交一个任务后，首先把这个任务包装为一个QueueingFuture，它是FutureTask的一个子类，然后覆写done方法，将结果置入BlockingQueue中，take和poll方法委托给了BlockingQueue，它会在结果不可用时阻塞。
+
+```java
+ExecutorService exec = Executors.newFixedThreadPool(10);
+CompletionService<List<String>> execcomp = new ExecutorCompletionService<List<String>>(
+    exec);
+Thread.setDefaultUncaughtExceptionHandler(new TagExceptionHandler());
+
+final String[] cardNoTagList = cardNoList.toArray(new String[0]);
+    
+int count = 0;
+    
+// 每个task打200个标签
+for (int i = 0; i < cardNoTagList.length; i += 200) {
+    if (i + 200 > cardNoTagList.length) {
+        count++;
+        execcomp.submit(new TagTask(cardNoTagList, i, cardNoTagList.length - 1));
+    } else {
+        count++;
+        execcomp.submit(new TagTask(cardNoTagList, i, i + 199));
+    }
+}
+    
+// 取出打标失败的收款账户列表
+for (int i = 0; i < count; i++) {
+    Future<List<String>> future = execcomp.take();
+    List<String> failed = future.get();
+    if (!failed.isEmpty()) {
+        allFailTagedList.addAll(failed);
+    }
+}
+```
+
+#NIO#
