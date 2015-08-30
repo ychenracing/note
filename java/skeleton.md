@@ -171,6 +171,15 @@ proxy实现的接口是：opensource.Test$Interface.
 以前没有注意的，数组工具类Arrays提供了很多功能的。容器类有工具类Collections，数组有Arrays。一个复制数组很好的方法是System.arraycopy()，比自己复制要快很多，基本类型数组和对象数组都可以复制，但是复制对象数组时是浅复制（shallow copy）; Arrays.equals()比较两个数组是否相等，基本类型数组的比较会自动采用包装器类型的equals方法；Arrays.sort()对数组排序，可以传入实现了Comparator接口的比较器或者数组元素自身实现Comparable接口；Arrays.binarySearch()对已经排好序的数组查找元素，若未找到，返回值是“-(应该插入的位置)-1”，如果自定义了比较器，binarySearch需要提供比较器。
 
 ##容器类的困惑##
+###迭代器的问题###
+Vector等Collection类，都有类似的说明：由 Vector 的 iterator 和 listIterator 方法所返回的迭代器是快速失败的：如果在迭代器创建后的任意时间从结构上修改了向量（通过迭代器自身的 remove 或 add 方法之外的任何其他方式），则迭代器将抛出 ConcurrentModificationException。因此，面对并发的修改，迭代器很快就完全失败，而不是冒着在将来不确定的时间任意发生不确定行为的风险。Vector 的 elements 方法返回的 Enumeration 不是 快速失败的。
+
+注意，迭代器的快速失败行为不能得到保证，一般来说，存在不同步的并发修改时，不可能作出任何坚决的保证。快速失败迭代器尽最大努力抛出 ConcurrentModificationException。因此，编写依赖于此异常的程序的方式是错误的，正确做法是：迭代器的快速失败行为应该仅用于检测 bug。
+
+Collection类返回一个Iterator之后，其实会创建一个**指向原来对象的单链索引表**，当原来的对象数量发生变化的时候（此处指不是通过迭代器自带的方法改变容器内容），这个单链索引表的内容**不会同步改变**，所以当索引指针往后移动的时候，找不到要找的对象，就会按照fail-fast原则（快速失败原则），Iterator马上抛出java.util.ConcurrentModificationException异常。换一个说法，也就是，在Iterator工作的时候，是不允许被迭代的对象改变的（除了迭代器自身的修改方法）。
+
+避免抛出这个异常的方法是：不使用Collection自身的remove()方法，而使用Iterator本身的方法remove()来删除对象，因为这样子可以删掉原对象，同时当前迭代对象的索引也得到同步。
+
 ###TreeSet中的元素保持唯一性依赖的仅仅是equals方法和hashCode方法吗？下面这个怎么解释？###
 【TreeSet是基于TreeMap实现的，TreeMap的put中只使用了compareTo方法，没有用equals方法，甚至都没用hash()】  
 解决：仅仅是依赖于compareTo方法，跟equals没有关系，查找的时候是从树的root进行查找，小了就往左查，大了就往右查。  
@@ -297,9 +306,9 @@ ExecutorService扩展了Executor接口，称为线程池，也称为服务。Run
   2. 提高响应速度。当任务到达时，任务可以不需要等到线程创建就能立即执行。
   3. 提高线程的可管理性。线程是稀缺资源，如果无限制的创建，不仅会消耗系统资源，还会降低系统的稳定性，使用线程池可以进行统一的分配，调优和监控。但是要做到合理的利用线程池，必须对其原理了如指掌。
 
-ExecutorService是一个interface，使用Executors创建ExecutorService对象时，可以选择带参数的方法`.newCachedThreadPool(ThreadFactory threadFactory)`，其中ThreadFactory是一个interface，可以创建一个实现该接口的可定制的类，实现其方法`newThread(Runnable runnable)`即可。`.newCachedThreadPool(ThreadFactory threadFactory)`会使用ThreadFactory中的`newThread(Runnable r)`来创建线程，创建的线程拥有newThread方法中定义的所有属性，如
+ExecutorService是一个interface，使用Executors创建ExecutorService对象时，可以选择带参数的方法`.newCachedThreadPool(ThreadFactory threadFactory)`，其中ThreadFactory是一个interface，可以创建一个实现该接口的可定制的类，实现其方法`newThread(Runnable runnable)`即可。`.newCachedThreadPool(ThreadFactory threadFactory)`会使用ThreadFactory中的`newThread(Runnable r)`来创建线程，创建的线程拥有newThread方法中定义的所有属性，如  
 ![](img/skeleton/36.png)  
-和
+和  
 ![](img/skeleton/37.png)  
 这样使用DaemonThreadFactory作为参数，创建出来的所有线程都拥有newThread方法中定义的所有属性（后台、优先级、名称）。
 
@@ -664,4 +673,243 @@ G1的首要目标是为需要大量内存的系统提供一个保证GC低延迟�
 
 **注意**: 如果正在使用CMS或Parallel Old GC，而应用程序的垃圾收集停顿时间并不长，那么继续使用现在的垃圾收集器是个好主意。使用最新的JDK时并不要求切换到G1收集器。
 
+##分配担保##
+![](img/skeleton/分配担保.png)
+
+##CMS的问题##
+- CPU资源敏感
+- 无法处理浮动垃圾（筛选回收阶段产生的垃圾）
+- 会产生内存碎片
+
+###对于内存碎片：###
+CMS提供了一个 **-XX:+UseCMSCompactAtFullCollection**开关参数[默认开启]，用于在CMS收集器顶不住要进行Full GC时开启内存碎片的合并整理过程。
+
+合并整理的过程是无法并发的，空间碎片问题没有了，但是停顿时间不得不变长。虚拟机设计者还提供了另外一个参数 **-XX:CMSFullGCsBeforeCompaction**，这个参数是用于设置执行多少次不压缩的Full GC后，跟着来一次带压缩的（默认值为0，标识每次进入Full GC时都进行碎片整理）。
+
+
 #NIO#
+阻塞式IO：一连接<--->一线程  
+非阻塞式IO：一请求<--->一线程
+
+##缓冲区##
+在操作系统中缓冲区是为了解决CPU的计算速度和外设输入输出速度不匹配的问题，因为外设太慢了，如果没有缓冲区，那么CPU在外设输入的时候就要一直等着，就会造成CPU处理效率的低下，引入了缓冲之后，外设直接把数据放到缓冲中，当数据传输完成之后，给CPU一个中断信号，通知CPU：“我的数据传完了，你自己从缓冲里面去取吧”。如果是输出也是一样的道理。
+##通道##
+那么通道用来做什么呢？其实从他的名字就可以看出，它就是一条通道，您想传递出去的数据被放置在缓冲区中，然后缓冲区中怎么从哪里传输出去呢？或者外设怎么把数据传输到缓冲中呢？这里就要用到通道。它可以进一步的减少CPU的干预，同时更有效率的提高整个系统的资源利用率，例如当**CPU要完成一组相关的读操作时，只需要向I/O通道发送一条指令，以给出其要执行的通道程序的首地址和要访问的设备，通道执行通道程序便可以完成CPU指定的I/O任务**。
+##选择器##
+另外一项创新是选择器，当我们使用通道的时候也许通道没有准备好，或者有了新的请求过来，或者线程遇到了阻塞，而选择器恰恰可以帮助CPU了解到这些信息，但前提是将这个通道注册到了这个选择器。
+
+```java
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.nio.channels.spi.SelectorProvider;
+import java.util.Iterator;
+
+/** 
+ * TCP/IP的NIO非阻塞方式
+ * 服务器端
+ * */
+
+public class Server implements Runnable{
+
+	//第一个端口
+	private Integer port1 = 8099;
+	//第二个端口
+	private Integer port2 = 9099;
+	//第一个服务器通道 服务A
+	private ServerSocketChannel serversocket1 ;
+	//第二个服务器通道 服务B
+	private ServerSocketChannel serversocket2 ;
+	//连接1
+	private SocketChannel clientchannel1 ;
+	//连接2
+	private SocketChannel clientchannel2 ;
+	//缓冲区
+	private ByteBuffer buf = ByteBuffer.allocate(512);
+
+       &nbsp;public Server(){
+		init();
+	}
+	
+	//选择器，主要用来监控各个通道的事件
+	private Selector selector ;
+	
+	/**
+	 * 这个method的作用1：是初始化选择器
+	 * 2：打开两个通道
+	 * 3：给通道上绑定一个socket
+	 * 4：将选择器注册到通道上
+	 * */
+	public  void init(){
+		try{
+			//创建选择器
+			this.selector = SelectorProvider.provider().openSelector();
+			//打开第一个服务器通道
+			this.serversocket1 = ServerSocketChannel.open();
+			//告诉程序现在不是阻塞方式的
+			this.serversocket1.configureBlocking(false);
+			//获取现在与该通道关联的套接字
+			this.serversocket1.socket().bind(new InetSocketAddress("localhost",this.port1));
+			//将选择器注册到通道上，返回一个选择键
+			//OP_ACCEPT用于套接字接受操作的操作集位
+			this.serversocket1.register(this.selector, SelectionKey.OP_ACCEPT);
+			
+			//然后初始化第二个服务端
+			this.serversocket2 = ServerSocketChannel.open();
+			this.serversocket2.configureBlocking(false);
+			this.serversocket2.socket().bind(new InetSocketAddress("localhost",this.port2));
+			this.serversocket2.register(this.selector, SelectionKey.OP_ACCEPT);
+			
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
+	/**
+	 * 这个方法是连接
+	 * 客户端连接服务器
+	 * @throws IOException 
+	 * */
+	public void accept(SelectionKey key) throws IOException{
+		ServerSocketChannel server = (ServerSocketChannel) key.channel(); 	
+		if(server.equals(serversocket1)){
+			clientchannel1 = server.accept();
+			clientchannel1.configureBlocking(false);
+			//OP_READ用于读取操作的操作集位
+			clientchannel1.register(this.selector, SelectionKey.OP_READ);
+		}else {
+			clientchannel2 = server.accept();
+			clientchannel2.configureBlocking(false);
+			//OP_READ用于读取操作的操作集位
+			clientchannel2.register(this.selector, SelectionKey.OP_READ);
+		}
+	}
+	
+	/**
+	 * 从通道中读取数据
+	 * 并且判断是给那个服务通道的
+	 * @throws IOException 
+	 * */
+	public void read(SelectionKey key) throws IOException{
+			
+			this.buf.clear();
+			//通过选择键来找到之前注册的通道
+			//但是这里注册的是ServerSocketChannel为什么会返回一个SocketChannel？？
+			SocketChannel channel = (SocketChannel) key.channel();
+			//从通道里面读取数据到缓冲区并返回读取字节数
+			int count = channel.read( this.buf);
+			
+			if(count == -1){
+				//取消这个通道的注册
+	            key.channel().close();
+	            key.cancel();
+	            return;
+			}
+			
+			//将数据从缓冲区中拿出来
+			String input = new String(this.buf.array()).trim();
+			//那么现在判断是连接的那种服务
+			if(channel.equals(this.clientchannel1)){
+				System.out.println("欢迎您使用服务A");
+				System.out.println("您的输入为："+input);
+			}else{
+				System.out.println("欢迎您使用服务B");
+				System.out.println("您的输入为："+input);
+			}
+		
+	}
+	
+	@Override
+	public void run() {
+		while(true){
+			try{
+				//选择一组键，其相应的通道已为 I/O 操作准备就绪。
+				this.selector.select();
+				
+				//返回此选择器的已选择键集
+				//public abstract Set<SelectionKey> selectedKeys()
+				Iterator selectorKeys = this.selector.selectedKeys().iterator();
+				while(selectorKeys.hasNext()){
+					//这里找到当前的选择键
+					SelectionKey key = (SelectionKey) selectorKeys.next();
+					//然后将它从返回键队列中删除
+					selectorKeys.remove();
+					if(!key.isValid()){
+						continue;
+					}
+					if(key.isAcceptable()){
+						//如果遇到请求那么就响应
+						this.accept(key);
+					}else if(key.isReadable()){
+						//读取客户端的数据
+						this.read(key);
+					}
+				}
+			}catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+		
+	public static void main(String[] args) {
+		Server server = new Server();
+		Thread thread = new Thread(server);
+		thread.start();
+	}
+}
+```
+
+client:
+
+```java
+package nio.asyn;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
+import java.net.InetAddress;
+
+/**
+ * TCP/IP的NIO非阻塞方式
+ * 客户端
+ * */
+public class Client {
+
+	//创建缓冲区
+	private ByteBuffer buffer = ByteBuffer.allocate(512);
+	//访问服务器
+	public void query(String host,int port) throws IOException{
+		InetSocketAddress address = new InetSocketAddress(InetAddress.getByName(host),port);
+		SocketChannel socket = null;
+	    byte[] bytes = new byte[512];
+		while(true){
+			try{
+				System.in.read(bytes);
+				socket = SocketChannel.open();
+				socket.connect(address);
+				buffer.clear();
+				buffer.put(bytes);
+				buffer.flip();
+				socket.write(buffer);
+				buffer.clear();
+			}catch (Exception e) {
+				e.printStackTrace();
+			}finally{
+				if(socket!=null){
+					socket.close();
+				}
+			}
+		}
+	}
+	
+	public static void main(String[] args) throws IOException{
+		new Client().query("localhost", 8099);
+		
+	}
+}
+```
