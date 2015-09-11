@@ -92,6 +92,18 @@ Redis Hash对应Value内部实际就是一个HashMap，实际这里会有2种不
 另外，Redis单实例的内存容量也应该有严格的限制。单实例内存容量较大后，直接带来的问题就是故障恢复或者Rebuild从库的时候时间较长，而更糟糕的是，Redis rewrite aof和save rdb时，将会带来非常大且长的系统压力，并占用额外内存，很可能导致系统内存不足等严重影响性能的线上故障。我们线上96G/128G内存服务器不建议单实例容量大于20/30G。
 
 #Memcache#
+##问题和缺点##
+- memcached单个item的数据最大是1MB，大于1MB可以压缩或拆分到多个key中。
+- 数据全部在内存中，服务器一重启数据全部丢失。
+- 只能做缓存不能持久化，不是为了处理庞大的数据而设计的。
+- 安全问题，没有提供任何安全策略。
+
+##优点##
+- get和set的性能比redis要好不少。
+- 可以存储session。
+- LRU算法+超时失效的cache机制。
+- memcached 1.2.5以及更高版本，提供了gets和cas命令，可以防止并发修改带来的问题。
+
 Memcache是这个项目的名称，而memcached是它服务器端的主程序文件名。
 
 Memcache是一个高性能的分布式的内存对象缓存系统，通过在内存里维护一个统一的**巨大的hash表**，它能够用来存储各种格式的数据，包括图像、视频、文件以及数据库检索的结果等。简单的说就是将数据调用到内存中，然后从内存中读取，从而大大提高读取速度。
@@ -108,6 +120,9 @@ Memcache是一个高性能的分布式的内存对象缓存系统，通过在内
 MemcachedItem item = memCachedClient.gets("key");
 memCachedClient.cas("key", (Integer)item.getValue() + 1, item.getCasUnique());
 ```
+
+#基于缓存的分布式session#
+![](img/distributedcachesession.jpg)
 
 #Reference#
 1. [国内外三个不同领域巨头分享的Redis实战经验及使用场景](http://www.csdn.net/article/1970-01-01/2817107)
