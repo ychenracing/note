@@ -2,7 +2,7 @@
 #G1 GC#
 G1 (Garbage-First)是一款面向服务器的垃圾收集器,主要针对**配备多颗处理器及大容量内存**的机器. 以极高概率满足GC停顿时间要求的同时，还具备高吞吐量性能特征. 在Oracle JDK 7 update 4 及以上版本中得到完全支持, 专为以下应用程序设计:
 
-- 可以像CMS收集器一样,GC操作与应用的线程一起并发执行
+- 可以像CMS收集器一样,GC操作与应用的线程一起并发执行.
 - 紧凑的空闲内存区间且没有很长的GC停顿时间.
 - 需要可预测的GC暂停耗时.
 - 不想牺牲太多吞吐量性能.
@@ -61,7 +61,7 @@ CMS提供了一个 **-XX:+UseCMSCompactAtFullCollection**开关参数[默认开�
 
 ##方法调用字节码指令##
 - invokestatic：调用静态方法
-- invokespecial：调用实例构造器<init>方法、私有方法和负累方法
+- invokespecial：调用实例构造器<init>方法、私有方法和父类方法
 - invokevirtual：调用所有的虚方法（可以被覆盖的方法，final修饰除外）
 - invokeinterface：调用接口方法，会在运行时再确定一个实现此接口的对象
 - invokedynamic：先在运行时动态解析出调用点限定符所引用的方法，然后再执行该方法。

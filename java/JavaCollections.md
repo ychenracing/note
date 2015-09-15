@@ -61,7 +61,7 @@ iterator()时顺着哈希桶数组来遍历，看起来是个乱序。
 
 支持ConcurrentMap接口，如putIfAbsent(key，value)与相反的replace(key，value)与以及实现CAS的replace(key, oldValue, newValue)。
 
-没有读锁是因为put/remove动作是个原子动作(比如put是一个对数组元素/Entry 指针的赋值操作)，读操作不会看到一个更新动作的中间状态。
+**没有读锁是因为put/remove动作是个原子动作(比如put是一个对数组元素/Entry 指针的赋值操作)，读操作不会看到一个更新动作的中间状态**。
 
 **ConcurrentSkipListMap**  
 JDK6新增的并发优化的SortedMap，以SkipList实现。SkipList是红黑树的一种简化替代方案，是个流行的有序集合算法，篇幅所限见[入门教程](http://blog.sina.com.cn/s/blog_72995dcc01017w1t.html)。Concurrent包选用它是因为它支持基于CAS的无锁算法，而红黑树则没有好的无锁算法。
@@ -72,7 +72,7 @@ JDK6新增的并发优化的SortedMap，以SkipList实现。SkipList是红黑树
 关于null，HashMap和LinkedHashMap是随意的，TreeMap没有设置Comparator时key不能为null；ConcurrentHashMap在JDK7里value不能为null(这是为什么呢？)，JDK8里key与value都不能为null；ConcurrentSkipListMap是所有JDK里key与value都不能为null。
 
 ##Set##
-Set几乎都是内部用一个Map来实现, 因为Map里的KeySet就是一个Set，而value是假值，全部使用同一个Object。Set的特征也继承了那些内部Map实现的特征。
+Set几乎都是内部用一个Map来实现, 因为Map里的KeySet就是一个Set，而value是一个空对象，全部使用同一个Object。Set的特征也继承了那些内部Map实现的特征。
 
 HashSet：内部是HashMap。  
 LinkedHashSet：内部是LinkedHashMap。  
@@ -115,13 +115,13 @@ pull()时会用peek()查看队头的元素，检查是否到达触发时间。Sc
 
 
 ##线程安全的阻塞队列##
-
 BlockingQueue的队列长度受限，用以保证生产者与消费者的速度不会相差太远，避免内存耗尽。队列长度设定后不可改变。当入队时队列已满，或出队时队列已空，不同函数的效果见下表：
 
-可能报异常	返回布尔值	可能阻塞等待	可设定等待时间  
-入队	add(e)	offer(e)	put(e)	offer(e, timeout, unit)  
-出队	remove()	poll()	take()	poll(timeout, unit)  
-查看	element()	peek()	无	无  
+|可能报异常|返回布尔值|可能阻塞等待|可设定等待时间|
+|--------|---------|----------|-----------|
+|入队|add(e)|offer(e)|put(e)|offer(e, timeout, unit)|
+|出队|remove()|poll()|take()|poll(timeout, unit)|
+|查看|element()|peek()|无|无|
 
 **ArrayBlockingQueue**  
 定长的并发优化的BlockingQueue，基于循环数组实现。有一把公共的读写锁与notFull、notEmpty两个Condition管理队列满或空时的阻塞状态。

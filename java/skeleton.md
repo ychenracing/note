@@ -247,7 +247,8 @@ HashSet和HashMap的容量自动扩充和负载因子的关系：具有允许指
 3. 在实现Serializable接口的类中添加writeObject(ObjectOutputStream)和readObject(ObjectInputStream)则可以自己定制序列化过程，相当于Externalizable的替代方法。要使用默认机制写入对象的非transient部分，则需要调用defaultWriteObject()方法。
 
 ##String.intern()在JDK6和7中的区别：##
-![](img/skeleton/27.png)
+![](img/skeleton/27.png)  
+JDK7中str.intern()：判断在常量池有没有和str内容一样的字符串，如果没有，在常量池创建一个这样的字符串，然后str指向常量池中的这个字符串；如果有，则不做任何操作。
 
 ##java引进匿名内部类的原因：##
 1. 完善多重继承
