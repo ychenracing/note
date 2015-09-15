@@ -3,7 +3,7 @@
 ![双亲委派模型](http://www.ibm.com/developerworks/cn/java/j-lo-classloader/image001.jpg "双亲委派模型")
 
 1. 最顶层的为`Bootstrap ClassLoader`，又名启动类加载器，加载`%JAVA_HOME%\lib`下的类，自己写的java应用程序访问不到该类加载器。由于双亲委派模型，所有的类加载请求都会被委派给该类加载器加载，如果该类加载器加载不了，再退回。
-2. 第二层的为`Extension ClassLoader`，又名扩展类加载器，加载`%AJVA_HOME%\lib\ext`下的Java类。
+2. 第二层的为`Extension ClassLoader`，又名扩展类加载器，加载`%JAVA_HOME%\lib\ext`下的Java类。
 3. 第三层的为`Application ClassLoader`，叫做应用程序类加载器，由于其是getSystemClassLoader()的返回值，所以又叫做系统类加载器。
 4. 下面的都是用户自定义的类加载器。  
 
@@ -50,8 +50,8 @@ protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundE
 阅读上面代码可以看出：
 
 1. 遇到类加载请求时，首先查找已加载的类，找到的话会解析返回，没有则2。
-2. 如果父类加载器不为空，委托给父类加载器加载，否则自己就是`Bootstrap ClassLoader`，查找`Bootstrap ClassLoader`，让其加载。
-3. 要是2也找不到，可能抛出`ClassNotFoundException`，吞掉，用加载自己的类加载器加载。
+2. 如果父类加载器不为空，委托给父类加载器加载，否则自己就是`Bootstrap ClassLoader`，查找由`Bootstrap ClassLoader`加载过的类，找不到会返回null。
+3. 要是2也找不到，则自己解析，父类加载器可能抛出`ClassNotFoundException`，吞掉，用加载自己的类加载器加载。
 
 ###JDK中ClassLoader中比较重要的方法###
 
@@ -70,7 +70,7 @@ protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundE
 
 ###定义自己的类加载器###
 
-虽然在绝大多数情况下，系统默认提供的类加载器实现已经可以满足需求。但是在某些情况下，还是需要为应用开发出自己的类加载器。比如自己的应用通过网络来传输Java类的字节代码，为了保证安全性，这些字节代码经过了加密处理。这个时候就需要自己的类加载器来从某个网络地址上读取加密后的字节代码，接着进行解密和验证，最后定义出要在Java虚拟机中运行的类来。下面将通过实例来说明类加载器的开发。  
+虽然在绝大多数情况下，系统默认提供的类加载器实现已经可以满足需求。但是在某些情况下，还是需要为应用开发出自己的类加载器。比如**自己的应用通过网络来传输Java类的字节代码**，为了保证安全性，这些字节代码经过了加密处理。这个时候就需要自己的类加载器来从某个网络地址上读取加密后的字节代码，接着进行解密和验证，最后定义出要在Java虚拟机中运行的类来。下面将通过实例来说明类加载器的开发。  
 
 **文件系统类加载器**  
 
@@ -121,7 +121,7 @@ public class FileSystemClassLoader extends ClassLoader {
 ```
 如上所示，类`FileSystemClassLoader`继承自类`java.lang.ClassLoader`。在ClassLoader方法表中列出的`java.lang.ClassLoader`类的常用方法中，一般来说，自己开发的类加载器只需要覆写`findClass(String name)`方法即可。
 
-`java.lang.ClassLoader`类的方法`loadClass()`封装了双亲委派模型的实现。该方法会首先调用`findLoadedClass()`方法来检查该类是否已经被加载过；如果没有加载过的话，会调用父类加载器的`loadClass()`方法来尝试加载该类；如果父类加载器无法加载该类的话，就调用`findClass()`方法来查找该类。因此，为了保证类加载器都正确实现委派模型，在开发自己的类加载器时，最好不要覆写`loadClass()`方法，而是覆写 `findClass()`方法。
+<font color="red">`java.lang.ClassLoader`类的方法`loadClass()`封装了双亲委派模型的实现。该方法会首先调用`findLoadedClass()`方法来检查该类是否已经被加载过；如果没有加载过的话，会调用父类加载器的`loadClass()`方法来尝试加载该类；如果父类加载器无法加载该类的话，就调用`findClass()`方法来查找该类。因此，为了保证类加载器都正确实现委派模型，在开发自己的类加载器时，最好不要覆写`loadClass()`方法，而是覆写 `findClass()`方法，然后加载类的时候直接调用`loadClass()`方法即可。</font>
 
 类`FileSystemClassLoader`的`findClass()`方法首先根据全类名在硬盘上查找类的字节代码文件（.class 文件），然后读取该文件内容，最后通过`defineClass()`方法来把这些字节代码转换成`java.lang.Class`类的实例。
 
@@ -149,9 +149,9 @@ Tomcat5,6,7的ClassLoader结构略有不同。
 - Tomcat7中没有ExtensionClassLoader。
 
 首先看前三个问题:  
-从上图可以看出，为了解决jar隔离和共享的问题。对于每个webapp,Tomcat都会创建一个WebAppClassLoader来加载应用，这样就保证了每个应用加载进来的class都是不同的(因为ClassLoader不同)! 而共享的jar放在tomcat-home/lib目录下，由CommonClassLoader来加载。通过双亲委托模式，提供给其下的所有webapp共享。
+从上图可以看出，为了解决jar隔离和共享的问题，**对于每个webapp，Tomcat都会创建一个WebAppClassLoader来加载应用**，这样就保证了每个应用加载进来的class都是不同的(因为ClassLoader不同)! 而共享的jar放在%TOMCAT_HOME%/lib目录下，由CommonClassLoader来加载。通过双亲委托模式，提供给其下的所有webapp共享。
 
-tomcat中loadClass源码：
+tomcat中loadClass源码（WebAppClassLoader.class）：
 
 ```java
 public synchronized Class<?> loadClass(String name, boolean resolve)
@@ -292,11 +292,11 @@ public synchronized Class<?> loadClass(String name, boolean resolve)
 
 1. 标注1(第18行)代码，首先从当前ClassLoader的本地缓存中加载类，如果找到则返回。
 2. 标注2(第29行)代码，在本地缓存没有的情况下，调用ClassLoader的findLoadedClass方法查看jvm是否已经加载过此类，如果已经加载则直接返回。
-3. 标注3(第41行)代码，通过系统的类加载器加载此类（用来加载JDK类库中的类），这里防止应用写的类覆盖了J2SE的类,这句代码非常关键，如果不写的话，就会造成你自己写的类有可能会把J2SE的类给替换调，另外假如你写了一个javax.servlet.Servlet类，放在当前应用的WEB-INF/class中，如果没有此句代码的保证，那么你自己写的类就会替换到Tomcat容器Lib中包含的类。
+3. 标注3(第41行)代码，通过系统的类加载器加载此类（用来加载JDK类库中的类），这里防止应用写的类覆盖了J2SE的类，这句代码非常关键，如果不写的话，就会造成你自己写的类有可能会把J2SE的类给替换调，另外假如你写了一个javax.servlet.Servlet类，放在当前应用的WEB-INF/class中，如果没有此句代码的保证，那么你自己写的类就会替换到Tomcat容器Lib中包含的类。
 4. 标注4(第68行)代码，判断是否需要委托给父类加载器进行加载，delegate属性默认为false，那么delegatedLoad的值就取决于filter的返回值了，filter方法中根据包名来判断是否需要进行委托加载，默认情况下会返回false.因此delegatedLoad为false
-5. 标注5(第72行)代码，因为delegatedLoad为false,那么此时不会委托父加载器去加载，这里其实是没有遵循parent-first的加载机制，这里是自己（这里的自己就是当前的webappclassloader）尝试加载类。
+5. 标注5(第72行)代码，因为delegatedLoad为false，那么此时不会委托父加载器去加载，这里其实是没有遵循parent-first的加载机制，这里是自己（这里的自己就是当前的webappclassloader）尝试加载类。
 6. 标注6(第96行)调用findClass方法在webapp级别进行加载。即第5点说的自己用自己的webappclassloader尝试加载类。
-7. 标注7(第111行)如果还是没有加载到类，并且不采用委托机制的话，则通过父类加载器去加载。
+7. 标注7(第111行)如果还是没有加载到类，并且不采用委托机制的话，则通过父类加载器去加载（**如果是WebAppClassLoader则其父类加载器是CommonClassLoader，至于CommonClassLoader中实现的类加载机制是不是双亲委派模型就不得而知了**）。
 
 **所以tomcat加载类的顺序是：**  
 当应用需要到某个类时，则会按照下面的顺序进行类加载：
@@ -305,7 +305,7 @@ public synchronized Class<?> loadClass(String name, boolean resolve)
 2. 使用system系统类加载器加载
 3. 使用应用类加载器在WEB-INF/classes中加载
 4. 使用应用类加载器在WEB-INF/lib中加载
-5. 使用common类加载器在CATALINA_HOME/lib中加载
+5. 使用common类加载器在%CATALINA_HOME%/lib中加载
 
 **特别说明**  
 对于WebAppClassLoader是违反双亲委托模型的。如果加载的是jre或者servlet api则依然是双亲委托模型。 而如果不是的话，则会先尝试自行加载，如果找不到再委托父加载器加载。 这个应该是可以理解的，因为应用的class是由WebAppClassLoader加载的，是项目私有的。
@@ -316,6 +316,7 @@ OSGi为了实现模块化的功能，自己实现了一套网状的类加载模�
 
 ###OSGi类加载流程###
 ![OSGi类加载流程](http://7xipn4.com1.z0.glb.clouddn.com/assets/jvm/classloader/osgi02.gif "OSGi类加载流程")
+
 Step 1:  
 > 检查是否java.，或者在bootdelegation中定义
 >> 当bundle类加载器需要加载一个类时，首先检查包名是否以java.开头，或者是否在一个特定的配置文件（org.osgi.framework.bootdelegation）中定义。 如果是，则bundle类加载器立即委托给父类加载器（通常是Application类加载器）。

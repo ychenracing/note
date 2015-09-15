@@ -109,3 +109,7 @@ zkClient.subscribeStateChanges(new IZkStateListener() {
 当发生session expire异常的时候，进行重连，原来所有的session和EPHEMERAL都失效，可以在handleNewSession进行容错处理。
 
 ![configurer tree](img/configurerTree.png "configurer tree")
+
+##集群Master单点故障问题##
+- ZooKeeper的leader选举。
+- Dual-Master双机互为备份，实现故障切换。如Mysql、Nginx等。
