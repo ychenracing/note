@@ -42,6 +42,25 @@ jstack -F 2764
 jstack -l 2764
 ```
 
+**<font color="red">Java程序中怎么获取所有线程的状态？怎么检查哪个线程处于死锁状态？</font>**
+
+JDK 1.5中Thread添加了getAllStackTraces()方法，可以获取虚拟机所有线程的StackTraceElement对象。
+
+```java
+for (Map.Entry<Thread, StackTraceElement[]> stackTrace : Thread.getAllStackTraces()
+            .entrySet()) {
+    Thread thread = stackTrace.getKey();
+    StackTraceElement[] stack = stackTrace.getValue();
+    if (thread.equals(Thread.currentThread())) {
+        continue;
+    }
+    System.out.print("\n线程：" + thread.getName() + "\n");
+    for (StackTraceElement element : stack) {
+        System.out.print("\t" + element + "\n");
+    }
+}
+```
+
 ###查看堆中对象的情况###
 用来监视进程运行中的jvm物理内存的占用情况，该进程内存内，所有对象的情况，例如产生了哪些对象，对象数量。当系统崩溃时，jmap 可以从core文件或进程中获得内存的具体匹配情况，包括Heap size, Perm size等。
 

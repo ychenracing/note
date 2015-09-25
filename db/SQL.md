@@ -233,22 +233,22 @@ SELECT * FROM $TABLE_NAME$ WHERE $COLUMN_NAME$ = #value#
 ###占位符的注入解决###
 iBatis解决sql注入
 
-1. ibatis xml配置：下面的写法只是简单的转义 name like '%\$name\$%'
+1. ibatis xml配置：下面的写法只是简单的转义 name like '%$name$%'
 2. 这时会导致sql注入问题，比如参数name传进一个单引号“'”，生成的sql语句会是：name like '%'%'
 3. 解决方法是利用字符串连接的方式来构成sql语句 name like '%'||'\#name\#'||'%'
 4. 这样参数都会经过预编译，就不会发生sql注入问题了。
-5. \#与\$区别:
+5. \#与$区别:
 
  > - \#xxx\# 代表xxx是属性值，map里面的key或者是你的pojo对象里面的属性, ibatis会自动在它的外面<font color="red">加上引号</font>，表现在sql语句是这样的 where xxx = 'xxx' ;
 
- > - \$xxx\$ 则是把xxx作为字符串拼接到你的sql语句中, 比如 order by topicId , 语句这样写 ... order by \#xxx\#，ibatis 就会把他翻译成 order by 'topicId' （这样就会报错） 语句这样写 ... order by \$xxx\$，ibatis 就会把他翻译成 order by topicId；
+ > - $xxx$ 则是把xxx作为字符串拼接到你的sql语句中, 比如 order by topicId , 语句这样写 ... order by \#xxx\#，ibatis 就会把他翻译成 order by 'topicId' （这样就会报错） 语句这样写 ... order by $xxx$，ibatis 就会把他翻译成 order by topicId；
 
 ##注意##
 1. \#将传入的数据都当成一个字符串，会对自动传入的数据加一个双引号。如：order by \#user\_id\#，如果传入的值是111,那么解析成sql时的值为order by "111", 如果传入的值是id，则解析成的sql为order by "id"。
-2. \$将传入的数据直接显示生成在sql中。如：order by \$user\_id\$，如果传入的值是111,那么解析成sql时的值为order by user\_id, 如果传入的值是id，则解析成的sql为order by id.
+2. $将传入的数据直接显示生成在sql中。如：order by $user\_id$，如果传入的值是111,那么解析成sql时的值为order by user\_id, 如果传入的值是id，则解析成的sql为order by id.
 3. \#方式能够很大程度防止sql注入。
-4. \$方式无法防止Sql注入。
-5. \$方式一般用于传入数据库对象，例如传入表名。
-6. 一般能用\#的就别用\$。
+4. $方式无法防止Sql注入。
+5. $方式一般用于传入数据库对象，例如传入表名。
+6. 一般能用\#的就别用$。
 
-MyBatis排序时使用order by 动态参数时需要注意，用$而不是#
+MyBatis排序时使用order by 动态参数时需要注意，用$而不是\#
