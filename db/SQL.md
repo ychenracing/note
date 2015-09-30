@@ -12,10 +12,11 @@ order by 类别 desc
 ```
  
  Error:  
- ![group by error](http://i.imgur.com/2mEmKtg.png)
+ ![group by error](http://i.imgur.com/2mEmKtg.png)  
+ “摘要”字段没在group by中，也没在聚合函数中。
 
 2. where和having的区别：
- - having一般用在group by之后，并且也是在group by起作用之后having才起作用的，where是在group by起作用之前就开始起作用的。having中经常包含聚合函数。  
+ - having一般用在group by之后，并且也是在group by起作用之后having才起作用的，where是在group by起作用之前就开始起作用的。<font color="red">having中经常包含聚合函数。</font>  
  
  Example:  
 
@@ -106,6 +107,8 @@ possible_keys: email
         Extra: Using index condition
 1 row in set (0.00 sec)
 ```
+
+![explain](img/explain.png "explain")
 
 ```
 id:表示select语句的编号
