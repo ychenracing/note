@@ -1,4 +1,51 @@
 ##IO复用##
+```cpp
+// 非阻塞忙轮询
+while true
+{
+    for i in stream[]
+    {
+        if i has data
+            read until unavailable
+    }
+}
+```
+<font color="red">为了避免CPU空转！！！</font>
+
+```cpp
+// select poll I/O多路复用
+
+// 计算机所有的问题都可以增加一个中间层来解决，同样，为了避免这里cpu的空转，我们不让这个线程亲自去检查流中是否有事件。
+// 而是引进了一个代理(一开始是select,后来是poll)，这个代理很牛，它可以同时观察许多流的I/O事件，如果没有事件，代理就阻塞，线程就不会挨个挨个去轮询了。
+// 伪代码如下：
+while true
+{
+    // 阻塞，不释放锁，释放CPU
+    select(streams[]) //这一步阻塞在这里，直到有一个流有I/O事件时，才往下执行
+    for i in streams[]
+    {
+        if i has data
+            read until unavailable
+    }
+}
+```
+
+```cpp
+// epoll I/O多路复用
+
+// epoll可以理解为event poll，不同于忙轮询和无差别轮询，epoll会把哪个流发生了怎样的I/O事件通知我们。
+// 所以我们说epoll实际上是事件驱动（每个事件关联上fd）的，此时我们对这些流的操作都是有意义的。
+//（复杂度降低到了O(1)）伪代码如下：
+while true
+{
+    active_stream[] = epoll_wait(epollfd)
+    for i in active_stream[]
+    {
+        read or write till
+    }
+}
+```
+
 IO多路复用是指内核一旦发现进程指定的一个或者多个IO条件准备读取，它就通知该进程。IO多路复用适用如下场合：
 
 1. 当客户处理多个描述字时（一般是交互式输入和网络套接口），必须使用I/O复用。

@@ -132,7 +132,7 @@ key:表示查询使用到的索引
 key_len:索引字段的长度
 ref:表示使用哪个列或常数与索引一起来查询记录
 rows:表示查询到的行数；
-extra:表示查询过程中的附加信息
+Extra:表示查询过程中的附加信息
 ```
 
 ##单列索引和组合索引##
@@ -164,17 +164,18 @@ SELECT i_testID FROM myIndex WHERE vc_Name='erquan' AND vc_City='郑州' AND i_A
 ALTER TABLE myIndex ADD INDEX name_city_age (vc_Name(10),vc_City,i_Age); 
 ```
 
-建表时，vc\_Name 长度为 10，这里为什么用 10 呢？因为一般情况下名字的长度不会超过 10，这样会加速索引查询速度，还会减少索引文件的大小，提高 INSERT 的更新速度。
-执行 T-SQL 时，MySQL 无须扫描任何记录就到找到唯一的记录。
+建表时，vc\_Name 长度为 10，这里为什么用 10 呢？因为一般情况下名字的长度不会超过 10，这样会加速索引查询速度，还会减少索引文件的大小，提高 INSERT 的更新速度。 
+ 
+执行 T-SQL 时，MySQL 无须扫描任何记录就能找到唯一的记录。
 
-肯定有人要问了，<font color="red">如果分别在 vc\_Name,vc\_City，i\_Age 上建立单列索引，让该表有 3 个单列索引，查询时和上述的组合索引效率一样吗？</font>大不一样，远远低于我们的组合索引。虽然此时有了三个索引，但 MySQL 只能用到其中的那个它认为似乎是最有效率的单列索引。
+肯定有人要问了，<font color="red">如果分别在 vc\_Name,vc\_City，i\_Age 上建立单列索引，让该表有 3 个单列索引，查询时和上述的组合索引效率一样吗？</font>大不一样，远远低于我们的组合索引。虽然此时有了三个索引，**但 MySQL 只能用到其中的那个它认为似乎是最有效率的单列索引。**
 
 建立这样的组合索引，其实是相当于分别建立了
 
 ```sql
-vc_Name,vc_City,i_Age  
-vc_Name,vc_City  
-vc_Name 
+vc_Name,vc_City,i_Age
+vc_Name,vc_City
+vc_Name
 ```
 
 这样的三个组合索引！为什么没有 vc\_City，i\_Age 等这样的组合索引呢？这是因为 mysql 组合索引“<font color="red">最左前缀</font>”的结果。简单的理解就是只从最左面的开始组合。并不是只要包含这三列的查询都会用到该组合索引，下面的几个 T-SQL 会用到：
@@ -196,7 +197,7 @@ SELECT * FROM myIndex WHREE vc_City="郑州"
 如果用户执行：
 
 ```sql
-select * from product where id = 5
+select * from product where id = 5；
 ```
 
 这条语句。其中5是有用户输入的。
