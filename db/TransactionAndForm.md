@@ -150,7 +150,7 @@ B: SELECT val FROM test WHERE id = 1;   # 返回 11，可见事务A的操作对�
 | 01 | john | Male |kkkk@ee.net|222456|200401|A楼2|
 | 01 | mary |famale|kkk@fff.net|123455|200402|A楼3|
 
-这个表完全满足于第一范式，主键由StudyNo和ClassNo组成，这样才能定位到指定行。但是，ClassAddress部分依赖于关键字(ClassNo-〉ClassAddress)，所以要变为两个表。
+这个表完全满足于第一范式，主键由StudyNo和ClassNo组成，这样才能定位到指定行。但是，ClassAddress部分依赖于关键字( `ClassNo → ClassAddress` )，所以要变为两个表。
 
 ###表一###
 |StudyNo|Name|Sex|Email|Phone|ClassNo|
@@ -173,11 +173,11 @@ B: SELECT val FROM test WHERE id = 1;   # 返回 11，可见事务A的操作对�
 |20040901|john|Male|kkkk@ee.net|优秀|$1000|
 |20040902|mary|famale|kkk@fff.net|良|$600|
 
-这个完全满足了第二范式,但是bounsLevel和bouns存在传递依赖
+现在，主键是StudyNo，主键只有单个字段，显然符合第二范式，但是bounsLevel和bouns存在传递依赖。
 
 更改为：
 
-|StudyNo|Name|Sex|Email|bouunsNo|
+|StudyNo|Name|Sex|Email|bounsNo|
 |-------|----|---|-----|--------|
 |20040901|john|Male|kkkk@ee.net|1|
 |20040902|mary|famale|kkk@fff.net|2|
