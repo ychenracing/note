@@ -1,7 +1,13 @@
+##final##
+
+带有final修饰符的类是不可派生的。在Java核心API中，有许多应用final的例子，例如java.lang.String。为String类指定final防止了人们覆盖length()方法。 
+
+另外，如果指定一个类为final，则该类所有的方法都是final。Java编译器会寻找机会内联（inline）所有的final方法（这和具体的编译器实现有关）。此举能够使性能平均提高50%。
+
 ##泛型##
 ###擦除的问题###
 1. 在什么情况下，编译器会自动插入转型代码？  
-解：<font color="red">在对传递进来的值进行额外的编译期检查，并插入对传递出去的值的转型</font>。
+解：~~在对传递进来的值进行额外的编译期检查，并插入对传递出去的值的转型~~，<font color="red">把传递出去的值赋予一个泛型类型的引用时，因为运行时实际是Object的，所以编译器会插入转型代码转成泛型类型的</font>。
 
  ***在Java中，不管类型参数是什么，一个类（使用了泛型）的所有实例都是同一类型。类型参数会在运行时被抹去。在C++中，参数类型不同，实例类型也不同。***
 
@@ -42,13 +48,13 @@
 所以总的构造顺序是：<font color="red">父类静态块 --> 然后是子类静态块 --> 父类自由块 --> 父类构造函数块 --> 子类自由块 --> 子类构造函数块</font>，很容易忽略但是是事实的点：父类构造器在子类成员初始化前！！！！！
 
 ###static###
-父类中的static域只会存在一份拷贝，并且不会在子类中有一份拷贝存在，子类中调用这个属性值访问的也是父类那个域的值。如，（**static方法不具有多态性，存在父类的常量池中**）：  
+父类中的static域只会存在一份拷贝，并且不会在子类中有一份拷贝存在，子类中调用这个属性值访问的也是父类那个域的值。如，（**static方法不具有多态性，存在父类的方法区中**）：  
 ![](img/skeleton/3.png)  
 ![](img/skeleton/4.png)
 
 ##内部类（用途和麻烦）：##
 ###获取当前内部类对象所链接的外围类对象的引用###
-在内部类中的方法内部，调用外围类类名.this方法会返回当前内部类所连接的外围类对象的引用，（内部类如果使用了外部环境的状态，那么，内部类加上创建它的外部环境，就叫做闭包）如：
+在内部类中的方法内部，调用外围类类名.this方法会返回当前内部类所连接的外围类对象的引用，（内部类如果使用了外部环境的状态，那么，<font color="red">内部类加上创建它的外部环境，就叫做闭包</font>）如：
 
 ```java
 public class EnclosingClass {
@@ -80,6 +86,61 @@ public class EnclosingClass {
 
 去掉这个内部类的无参构造器时，则用反射获取不到其构造器（即，不显示的定义内部类构造器，使用反射就获取不到内部类的构造器【有参无参均获取不到】），显示的定义一个无参构造器，则可以获取到使用了外部类对象当做其默认参数的内部类构造器。
 
+***如果是一个普通的类没有显式声明构造函数，则使用反射可以获取其默认的无参构造函数。如果一个内部类（或嵌套类）没有显式声明构造函数，则使用反射<font color="red">不能</font>获取其默认的无参构造函数，即获取不到构造函数。***
+
+
+如，
+
+```java
+import java.lang.reflect.Constructor;
+
+/**
+ * 【不要在构造器里调用可能被重载的虚方法，这是极度危险的】。
+ * 构造器的初始化顺序大概是 父类静态块 子类静态块 父类初始化语句 父类构造函器 子类初始化语句 子类构造器。
+ * 父类构造器执行的时候，调用了子类的重载方法，然而子类的类字段还在刚初始化的阶段，刚完成内存布局，只能输出null。
+ * @author racing
+ * @version $Id: Base.java, v 0.1 Sep 25, 2015 10:29:33 PM racing Exp $
+ */
+public class Base {
+    private String baseName = "base";
+
+    public Base() {
+        callName();
+    }
+
+    public void callName() {
+        System.out.println(baseName);
+    }
+
+    class Sub extends Base {
+        private String baseName = "sub";
+
+        @Override
+        public void callName() {
+            System.out.println(baseName);
+        }
+    }
+
+    public static void main(String[] args) {
+
+        Base sub = (new Base()).new Sub(); // output: null
+
+        try {
+            Class<?> class1 = Class.forName("jvm.thinking.Base$Sub");
+            Constructor[] cons = class1.getConstructors();
+            System.out.println(cons.length); // output: 0
+            for (Constructor<?> con : cons) {
+                System.out.println(con.getName());
+            }
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
+    }
+}
+```
+
+
 ##异常##
 异常的问题？异常在有的情况下会被忽略！如（直接在finally中抛出新异常或者在finally中使用return）：  
 
@@ -88,10 +149,10 @@ public class EnclosingClass {
 而且，子类抛出的异常会有限制，子类可以：
 
 1. 不抛出异常；
-2. 抛出父类异常说明中的异常或这些异常的子类；
+2. 抛出父类异常声明中的异常或这些异常的子类；
 3. 抛出未受检验的异常（unchecked exception）。
 
-子类直接抛出的异常（方法名后面的那些throws）不能比父类更宽泛，但是可以在catch中抛出更宽泛的异常。
+子类直接声明抛出的异常（方法名后面的那些throws）不能比父类更宽泛，但是可以在catch中抛出更宽泛的异常。
 
 ##正则表达式##
 Pattern类和Matcher类的使用方法：
@@ -105,16 +166,18 @@ Pattern类和Matcher类的使用方法：
 - 方法熟悉：
 
 1. Pattern的静态方法matches(regex, string)，判断正则表达式是否能匹配字符串，返回boolean。相当于matcher对象的无参方法matches()。
-2. Matcher对象的方法：无参方法<font color="red">lookingAt()</font>，匹配字符串的起始部分，如果返回true，则可以接着调用group方法获得匹配了的字符串部分；无参<font color="red">find()</font>，寻找字符串的下一个匹配，返回true之后，可以调用group、start（包含）和end（不包含）方法操作；有参<font color="red">find(index)</font>，相当于从第index位置起的无参find()；无参<font color="red">group()</font>，在find()操作之后，因为要先用find找到匹配，才能返回匹配的部分，group返回匹配了的string，和start()、end()可以一起用，来获得匹配部分的详细信息。无参<font color="red">reset()</font>，在find()迭代完成之后，调用reset重置，可以重新迭代。有参<font color="red">reset(string)</font>，则表示把matcher作用于新的string，即参数；<font color="red">appendReplacement(StringBuffer, replacement)</font>【把matcher上匹配到的结果替换为replacement，replacement中可以使用组号获取正则表达式中的组，然后再把替换后的结果挂载到StringBuffer中】，允许在替换的时候做一些特殊处理，一步一步进行替换，把上一次匹配和这次匹配之间的结果（包括这次匹配替换）挂在到stringbuffer上去，<font color="red">appendTail(stringbuffer)</font>把最后一次匹配之后剩余的字符串挂载到stringbuffer上。如，  
+2. Matcher对象的方法：无参方法<font color="red">lookingAt()</font>，匹配字符串的起始部分，如果返回true，则可以接着调用group方法获得匹配了的字符串部分；无参<font color="red">find()</font>，寻找字符串的下一个匹配，返回true之后，可以调用group、start（包含）和end（不包含）方法操作；有参<font color="red">find(index)</font>，相当于从第index位置起的无参find()；无参<font color="red">group()</font>，在find()操作之后，因为要先用find找到匹配，才能返回匹配的部分，group返回匹配了的string，和start()、end()可以一起用，来获得匹配部分的详细信息。无参<font color="red">reset()</font>，在find()迭代完成之后，调用reset重置，可以重新迭代。有参<font color="red">reset(string)</font>，则表示把matcher作用于新的string，即参数；<font color="red">appendReplacement(StringBuffer, replacement)</font>【把matcher上匹配到的结果替换为replacement（需要先调用find找到匹配部分），replacement中可以使用组号获取正则表达式中的组，然后再把替换后的结果挂载到StringBuffer中】，允许在替换的时候做一些特殊处理，一步一步进行替换，把上一次匹配和这次匹配之间的结果（包括这次匹配替换）挂在到stringbuffer上去，<font color="red">appendTail(stringbuffer)</font>把最后一次匹配之后剩余的字符串挂载到stringbuffer上。如，  
 ![](img/skeleton/10.png)
 
+ 正则表达式中的括号不是表示字符串的括号，表示的是捕获组。
+
 ###[]和()的区别###
-[]表示字符类，一般表示匹配[]里面的一个字符，比如[^abc]，表示除abc外的其他一个任意字符。注：^放在中括号中才表示“非”的意思。()表示捕获组，比如，想要问号作用与前面的所有范围，则用(abc)?而不是abc?。
+[]表示字符类，一般表示匹配[]里面的一个字符，比如[^abc]，表示除abc外的其他一个任意字符。注：^放在中括号中才表示“非”的意思。()表示捕获组，比如，想要问号作用于前面的所有范围，则用(abc)?而不是abc?。
 
 ###量词匹配的贪婪型、勉强型和占有型###
 贪婪型属于正常的表示（平时写的那些），勉强型则在后面加个问号，占有型加个加号，都只作用于前面的问号、星号、加号、大括号，因为前面如果没有这些，就变成普通的问号和加号了（也就是变成贪婪型了）。
 
-- 贪婪型的匹配原理，一个一个匹配，先一直匹配到最后，发现最后的字符不匹配时，往前退一格再匹配，不匹配时再退一格，递归；
+- 贪婪型的匹配原理，一个一个匹配，先一直匹配到最后，发现最后的字符不匹配时，往前退一格再匹配，不匹配时再退一格，以此递推；
 - 勉强型是匹配到一个字符后看看匹配能否结束，能结束就结束；
 - 占有型（完全匹配）是从第一个匹配开始，把后面所有字符串读入来匹配，一直匹配到最后，如果最后的字符不匹配的话，那么也不回退，返回false结束。如，  
 ![](img/skeleton/11.png)
@@ -158,7 +221,141 @@ proxy实现的接口是：opensource.Test$Interface.
 
 以前一直理解为这里的cc指向的是Integer类型的，其实也是跟前面的list一样，这里的cc指向的是Class对象，只不过这个Class对象里面保存的是Integer的信息！
 
-编译器会干什么，编译器不能干什么？编译器会尽力保证你放进泛型对象中的类型是正确的。编译器会检查你传进去的数据是不是正确的类型（此时不会插入任何代码，只是编译器检查），在字节码文件中，可以看到：在取出泛型对象中的数据时，编译器自动插入了一条转型代码。所以，综合来说，编译器是尽可能保证你的类型使用是安全的，但是又不能完全保证（因为运行时的类型安全是编译器保证不了的）。
+编译器会干什么，编译器不能干什么？编译器会尽力保证你放进泛型对象中的类型是正确的。编译器会检查你传进去的数据是不是正确的类型（此时不会插入任何代码，只是编译器检查），~~<font color="red">在字节码文件中，可以看到：在取出泛型对象中的数据时，编译器自动插入了一条转型代码。所以，综合来说，编译器是尽可能保证你的类型使用是安全的，但是又不能完全保证（因为运行时的类型安全是编译器保证不了的）</font>~~，编译器尽量保证放入和取出的类型是正确的，由于擦除，编译器知道该实际类型是Object的，但是让我们看到的是泛型类型的，如果取出的类型对象当成泛型类型使用，则编译器会插入一条转型代码，如果直接使用（即不赋于一个泛型类型的引用），则不会插入转型代码。如，
+
+```java
+public class Base {
+
+    static class Gene<T> {
+        private T t;
+
+        Gene(T t) {
+            this.t = t;
+        }
+
+        public void setT(T t) {
+            this.t = t;
+        }
+
+        public T getT() {
+            return t;
+        }
+    }
+
+    public static void main(String[] args) {
+        Gene<Integer> gene = new Gene<Integer>(12);
+        Gene newGene = gene;
+        newGene.setT("@#￥%&*");
+        gene = newGene;
+        System.out.println(gene.getT()); // 此处没有转型失败异常，由于擦除，此处getT得到的类型在编译器看来是Integer的，在运行时是Object，所以运行时正常。
+    }
+}
+```
+反编译Base的字节码为：
+
+```java
+Compiled from "Base.java"
+public class Base {
+  public Base();
+    Code:
+       0: aload_0
+       1: invokespecial #1                  // Method java/lang/Object."<init>":()V
+       4: return
+
+  public static void main(java.lang.String[]);
+    Code:
+       0: new           #2                  // class Base$Gene
+       3: dup
+       4: bipush        12
+       6: invokestatic  #3                  // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;
+       9: invokespecial #4                  // Method Base$Gene."<init>":(Ljava/lang/Object;)V
+      12: astore_1
+      13: aload_1
+      14: astore_2
+      15: aload_2
+      16: ldc           #5                  // String @#￥%&*
+      18: invokevirtual #6                  // Method Base$Gene.setT:(Ljava/lang/Object;)V
+      21: aload_2
+      22: astore_1
+      23: getstatic     #7                  // Field java/lang/System.out:Ljava/io/PrintStream;
+      26: aload_1
+      27: invokevirtual #8                  // Method Base$Gene.getT:()Ljava/lang/Object; // 此处及其后面没有看到任何转型代码
+      30: invokevirtual #9                  // Method java/io/PrintStream.println:(Ljava/lang/Object;)V
+      33: return
+}
+```
+
+
+如果把Base.java的代码改为：
+
+```java
+public class Base {
+
+    static class Gene<T> {
+        private T t;
+
+        Gene(T t) {
+            this.t = t;
+        }
+
+        public void setT(T t) {
+            this.t = t;
+        }
+
+        public T getT() {
+            return t;
+        }
+    }
+
+    public static void main(String[] args) {
+        Gene<Integer> gene = new Gene<Integer>(12);
+        Gene newGene = gene;
+        newGene.setT("@#￥%&*");
+        gene = newGene;
+        // 新增了下面这条语句
+        Integer in = gene.getT(); // 此处有转型失败异常，由于擦除，此处getT得到的类型在编译器看来是Integer的，在运行时是Object，编译器知道getT取出来的类型在运行时是Object的，但是让我们看到的是Integer，然后我们真的把它赋给了一个Integer，所以这里编译器会加上转型语句。
+        System.out.println(in); 
+    }
+}
+```
+
+反编译字节码为：
+
+```java
+Compiled from "Base.java"
+public class Base {
+  public Base();
+    Code:
+       0: aload_0
+       1: invokespecial #1                  // Method java/lang/Object."<init>":()V
+       4: return
+
+  public static void main(java.lang.String[]);
+    Code:
+       0: new           #2                  // class Base$Gene
+       3: dup
+       4: bipush        12
+       6: invokestatic  #3                  // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;
+       9: invokespecial #4                  // Method Base$Gene."<init>":(Ljava/lang/Object;)V
+      12: astore_1
+      13: aload_1
+      14: astore_2
+      15: aload_2
+      16: ldc           #5                  // String @#￥%&*
+      18: invokevirtual #6                  // Method Base$Gene.setT:(Ljava/lang/Object;)V
+      21: aload_2
+      22: astore_1
+      23: aload_1
+      24: invokevirtual #7                  // Method Base$Gene.getT:()Ljava/lang/Object;
+      27: checkcast     #8                  // class java/lang/Integer // 多出来了这么一句
+      30: astore_3
+      31: getstatic     #9                  // Field java/lang/System.out:Ljava/io/PrintStream;
+      34: aload_3
+      35: invokevirtual #10                 // Method java/io/PrintStream.println:(Ljava/lang/Object;)V
+      38: return
+}
+```
+
 
 ###为什么不能创建泛型数组？能创建泛型对象吗？###
 在泛型代码中，不能用T t = new T()形式创建对象，不能用T[] tt = new T[n]创建泛型数组，不能使用instanceof检查泛型类型。那么，
@@ -168,7 +365,7 @@ proxy实现的接口是：opensource.Test$Interface.
 2. ***创建泛型类型的数组？***  
    解：创建泛型类型的引用，指向非泛型类型的数组，然后再转型为泛型类型的数组。
 
-![](img/skeleton/18.png)  
+   ![](img/skeleton/18.png)  
 
 
 以前理解有误，认为泛型中通配符是代表所有的类型，随意什么类型，现在需要改正一下：通配符代表的是某种确切的类型，它可以是任意的类型，但是它是确切的、确定了的。如，  
@@ -186,9 +383,42 @@ proxy实现的接口是：opensource.Test$Interface.
 
 ##容器类的困惑##
 ###迭代器的问题###
-Vector等Collection类，都有类似的说明：由 Vector 的 iterator 和 listIterator 方法所返回的迭代器是快速失败的：如果在迭代器创建后的任意时间从结构上修改了向量（通过迭代器自身的 remove 或 add 方法之外的任何其他方式），则迭代器将抛出 ConcurrentModificationException。因此，面对并发的修改，迭代器很快就完全失败，而不是冒着在将来不确定的时间任意发生不确定行为的风险。Vector 的 elements 方法返回的 Enumeration 不是 快速失败的。
+Vector等Collection类，都有类似的说明：由 Vector 的 iterator 和 listIterator 方法所返回的迭代器是快速失败的：如果在迭代器创建后的任意时间从结构上修改了向量（通过迭代器自身的 remove 或 add 方法之外的任何其他方式，set修改某一项的内容不算），则迭代器将抛出 ConcurrentModificationException。因此，面对并发的修改，迭代器很快就完全失败，而不是冒着在将来不确定的时间任意发生不确定行为的风险。Vector 的 elements 方法返回的 Enumeration 不是 快速失败的。
+
+```java
+List<String> list = new ArrayList<String>();
+list.add("chen");
+list.add("yong");
+Iterator<String> ite = list.iterator();
+list.set(1, "y");
+list.add("yyy");
+while (ite.hasNext()) {
+    System.out.print(ite.next() + " "); // 由于list.add("yyy");抛出ConcurrentModificationException
+}
+```
 
 注意，迭代器的快速失败行为不能得到保证，一般来说，存在不同步的并发修改时，不可能作出任何坚决的保证。快速失败迭代器尽最大努力抛出 ConcurrentModificationException。因此，编写依赖于此异常的程序的方式是错误的，正确做法是：迭代器的快速失败行为应该仅用于检测 bug。
+
+遍历Map一般使用：
+
+```java
+Map<String, Integer> map = new HashMap<String, Integer>();
+for (Map.Entry<String, Integer> entry : map.entrySet()) {
+    System.out.println("key:" + entry.getKey() + ", value:" + entry.getValue());
+}
+```
+
+如果想边遍历边删除，就可以使用：
+
+```java
+Iterator<Map.Entry<String, Integer>> iter = map.entrySet().iterator();
+while (iter.hasNext()) {
+    Map.Entry<String, Integer> entry = iter.next();
+    if (entry.getKey().equals("removed")) {
+        iter.remove();
+    }
+}    
+```
 
 Collection类返回一个Iterator之后，其实会创建一个**指向原来对象的单链索引表**，当原来的对象数量发生变化的时候（此处指不是通过迭代器自带的方法改变容器内容），这个单链索引表的内容**不会同步改变**，所以当索引指针往后移动的时候，找不到要找的对象，就会按照fail-fast原则（快速失败原则），Iterator马上抛出java.util.ConcurrentModificationException异常。换一个说法，也就是，在Iterator工作的时候，是不允许被迭代的对象改变的（除了迭代器自身的修改方法）。
 
@@ -205,23 +435,23 @@ HashMap中，如果对keySet进行修改操作，会影响到HashMap的结果，
 LinkedHashMap可以按照访问顺序存放entry（注意不是访问次数！），把最近访问过的元素往后放（不是总访问次数越多就越在后面），LinkedHashSet没有这功能，只有保持插入顺序。LinkedHashMap的accessOrder使用如下，  
 
 ```java
-        LinkedHashMap<String, String> lhm = new LinkedHashMap<String, String>(16, 0.75f, true);
-        lhm.put("2", "2");
-        lhm.put("1", "1");
+LinkedHashMap<String, String> lhm = new LinkedHashMap<String, String>(16, 0.75f, true);
+lhm.put("2", "2");
+lhm.put("1", "1");
 
-        lhm.get("1");
-        lhm.get("1");
-        lhm.get("1");
-        lhm.get("2"); // 最近访问过的元素放在后面
+lhm.get("1");
+lhm.get("1");
+lhm.get("1");
+lhm.get("2"); // 最近访问过的元素放在后面
 
-        for (Map.Entry<String, String> entry : lhm.entrySet()) {
-            System.out.println(entry.getKey() + " " + entry.getValue());
-        }
-        
-        /** output
-         *  1 1
-         *  2 2
-         */
+for (Map.Entry<String, String> entry : lhm.entrySet()) {
+    System.out.println(entry.getKey() + " " + entry.getValue());
+}
+    
+/** output
+ *  1 1
+ *  2 2
+ */
 ```
 
 ###LinkedHashSet已经是链表，那么怎么配合哈希表工作？###
@@ -320,7 +550,7 @@ JMM提供的初始化安全性可以保证final域的获取对象引用的操作
 Reference: [单例模式的七种写法](http://cantellow.iteye.com/blog/838473)
 
 ##线程池##
-一般使用ExecutorService的实例对象来执行线程，如`ExecutorService exec = Executors.newCachedThreadPool();然后调用exec.execute(new Runnable());`来运行Runnable对象。
+一般使用ExecutorService的实例对象来执行线程，如ExecutorService exec = Executors.newCachedThreadPool();然后调用exec.execute(new Runnable());来运行Runnable对象。
 
 ExecutorService扩展了Executor接口，称为线程池，也称为服务。Runnable对象称为任务。
 
@@ -695,12 +925,12 @@ public class Server implements Runnable{
 	//缓冲区
 	private ByteBuffer buf = ByteBuffer.allocate(512);
 
-       &nbsp;public Server(){
+	public Server(){
 		init();
 	}
 	
 	//选择器，主要用来监控各个通道的事件
-	private Selector selector ;
+	private Selector selector;
 	
 	/**
 	 * 这个method的作用1：是初始化选择器

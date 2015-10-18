@@ -1,6 +1,6 @@
 ##Mysql##
 存储引擎（索引）：  
-MyISAM（B树），InnoDB（B+树）
+MyISAM（B+树），InnoDB（B+树）
 
 最左前缀原则：
 
@@ -109,3 +109,6 @@ vc_Name,vc_City,i_Age
 vc_Name,vc_City  
 vc_Name 
 ```
+
+##Reference##
+[1] [经典好文：B-树和B+树的应用：数据搜索和数据库索引](http://blog.csdn.net/hguisu/article/details/7786014)
