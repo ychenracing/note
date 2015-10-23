@@ -1,3 +1,38 @@
+##Servlet、Servlet应用、Servlet容器：##
+
+- 一个Servlet就是一个运行在服务器端的Java程序，一个Servlet应用包含了一个或多个Servlet，一个JSP页面会被翻译并编译成一个Servlet，一个Servlet容器中包含一个或多个Servlet应用。
+- Servlet和JSP仅仅是Java企业版众多技术之一，其他的技术包括JMS、EJB、JSF、JPA等。典型的Servlet容器有Tomcat、Jetty、GlassFish、JBoss、Oracle Weblogic、IBM WebSphere等，一个Servlet应用对应到Tomcat或其他容器中的一个网站。Tomcat、Jetty不是Java企业版容器，不能运行EJB或JMS等。
+- Tomcat配置应用程序，有显式配置和隐式配置，
+
+    - 显式配置，
+
+        - 在conf/server.xml中定义Context标签，该标签中必须使用docBase和path属性。
+        - 在conf/Catalina/目录中新建xml文件，该xml文件名字即path的值，即应用名称。该xml文件中docBase属性是必须的，指明应用程序的位置。
+    - 隐式配置，
+
+        - 把war文件或整个应用程序复制到webapps目录中。
+
+##容器Servlet、JSP、JavaBean的MVC：##
+
+- Servlet仅作为控制器使用，仅充当控制器角色，它的作用类似于调度员：所有用户请求都发送给Servlet，Servlet调用Model来处理用户请求，并调用JSP来呈现处理结果；或者Servlet直接调用JSP将应用的状态数据呈现给用户。Model通常由JavaBean来充当，所有业务逻辑、数据访问逻辑都在Model中实现。实际上隐藏在Model下的可能还有很多丰富的组件，例如DAO组件、领域对象等。如，
+  
+  - M： 
+  ![model "model"](img/M1.png)  
+  ![model "model"](img/M2.png)
+  - V:
+  ![model "model"](img/V1.png)
+  - C:
+  ![model "model"](img/C1.png)
+
+##控制反转和依赖注入：##
+- 控制反转是指在spring注册java bean，或者使用注解向spring注册。然后在合适的地方，就不要自己使用new来创建刚刚注册的java类的对象，而是spring会帮我们创建。
+- 依赖注入有几种情形：
+
+    - 一个类A中维持了另一个类B的引用，B已经使用控制反转的某种注册方法向spring中注册了自己。然后，在类A的某个方法运行时，需要用到B的某个方法，因为我们没有new B来创建B的对象，所以，spring会在我们使用B的时候，把B的实例注入到A类中的B的引用。
+    - 在spring的controller的方法中，如果方法参数中使用到了某个对象比如HttpSession或者HttpRequest或者自己定义的类等，称作为依赖这个对象，那么在运行这个方法时，spring会把我们依赖的类的实例注入到这个方法参数的引用中。如，
+      ![](img/DI.png)  
+      此处方法依赖student的实例，在运行时，spring会注入一个new Student()实例到student引用中去。输出为`null:null:null`，表示student不为null但是里面的属性都为null。
+
 ##Filter##
 Servlet中的过滤器，是一个特殊的Servlet，类似于Spring中的aop/拦截器。
 
