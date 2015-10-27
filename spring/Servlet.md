@@ -1,5 +1,10 @@
-##Servlet、Servlet应用、Servlet容器：##
+##HTTP是无状态的，B/S模式下，怎么保存客户端服务端状态？##
+- 使用cookie，但是有大小限制，一般cookie只用来传递sessionId。
+- 使用session，通过cookie传递sessionId，可以从服务器session中获取状态信息。但是禁用cookie怎么办？URL重写。
+- URL重写，针对禁用cookie的情况，不能通过cookie传递sessionId，使用URL重写把sessionId重写到URL中去，从而可以从服务端获取到对应的session。比cookie更不安全，因为URL可能保存起来或者发送给别人。
+- form表单添加token隐藏域，隐藏域值为sessionId，或者通过隐藏表单提交数据。
 
+##Servlet、Servlet应用、Servlet容器：##
 - 一个Servlet就是一个运行在服务器端的Java程序，一个Servlet应用包含了一个或多个Servlet，一个JSP页面会被翻译并编译成一个Servlet，一个Servlet容器中包含一个或多个Servlet应用。
 - Servlet和JSP仅仅是Java企业版众多技术之一，其他的技术包括JMS、EJB、JSF、JPA等。典型的Servlet容器有Tomcat、Jetty、GlassFish、JBoss、Oracle Weblogic、IBM WebSphere等，一个Servlet应用对应到Tomcat或其他容器中的一个网站。Tomcat、Jetty不是Java企业版容器，不能运行EJB或JMS等。
 - Tomcat配置应用程序，有显式配置和隐式配置，

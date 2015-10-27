@@ -161,13 +161,13 @@ bean后处理器，对容器中的bean进行后处理增强。
 
 然后调用的先后关系：  
 
-
+（3和4的先后顺序很奇怪：4和5称为初始化过程）
 
 1. 先spring创建bean，分配存储空间。
-2. 注入依赖。spring设置bean的属性、执行构造函数。
+2. 注入依赖。spring注入bean的属性。
 3. （想要初始化。）调用BeanPostProcessor的postProcessBeforeInitialization()方法。
 4. （开始初始化。）调用InitializingBean的afterPropertiesSet()方法。
-5. 调用初始化方法。
+5. 调用构造函数、执行初始化方法。
 6. （初始化之后。）调用BeanPostProcessor的postProcessAfterInitialization()方法。
 
 **用处**  
