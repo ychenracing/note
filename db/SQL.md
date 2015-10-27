@@ -12,7 +12,7 @@ order by 类别 desc
 ```
  
  Error:  
- ![group by error](http://i.imgur.com/2mEmKtg.png)  
+ ![group by error](img/2mEmKtg.png)  
  “摘要”字段没在group by中，也没在聚合函数中。
 
 2. where和having的区别：
