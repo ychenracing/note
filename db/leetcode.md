@@ -161,3 +161,44 @@ Write a SQL query to find employees who have the highest salary in each of the d
           on B.DepartmentId = C.DepartmentId and B.Salary = C.Salary) as D
  on A.Id = D.Id
  ```
+ 
+##196. Delete Duplicate Emails##
+ Write a SQL query to delete all duplicate email entries in a table named `Person`, keeping only unique emails based on its smallest Id.
+
+| Id | Email            |
+|----|------------------|
+| 1  | john@example.com |
+| 2  | bob@example.com  |
+| 3  | john@example.com |
+
+Id is the primary key column for this table.
+For example, after running your query, the above `Person` table should have the following rows:
+
+| Id | Email            |
+|----|------------------|
+| 1  | john@example.com |
+| 2  | bob@example.com  |
+
+###解答###
+
+思路：
+
+1. 按照Email进行group by，这样Email就是distinct的了，同时找出id最小的记录：
+
+ ```sql
+ delete from Person 
+ where Id not in (select MIN(A.Id) as Id from Person as A group by A.Email)
+ ```
+ 但是，<font color="red">在删除和修改的语句中，修改的表和select中用的表不能是同一张表！</font>否则会爆出错误：
+ 
+ ```sql
+ You can't specify target table 'Person' for update in FROM clause
+ ```
+ 
+ 所以，得再建一层视图。解答见2
+2. sql如下：
+
+ ```sql
+delete from Person 
+where Id not in (select Id from (select MIN(A.Id) as Id from Person as A group by A.Email) as B)
+```
