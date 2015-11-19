@@ -192,6 +192,16 @@ SELECT * FROM myIndex WHREE i_Age=20 AND vc_City="郑州"
 SELECT * FROM myIndex WHREE vc_City="郑州" 
 ```
 
+##UNION和UNION ALL##
+union和union all是将两个select语句的结果进行合并。
+
+union会对结果进行排序再合并，并且去除重复记录，如果表数据量大的话可能会导致用磁盘进行排序，union all只是简单的合并结果集。
+
+两个最基本的原则：
+
+- 所有查询中的列数和列的顺序必须相同。
+- 数据类型必须兼容。
+
 ##SQL注入与MyBatis##
 ###SQL注入###
 如果用户执行：
