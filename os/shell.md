@@ -272,7 +272,7 @@ echo $?
 1. [[是bash的关键字，不是命令。[[]]比[]更通用，在[[]]内的所有字符都不会发生文件名扩展或者单词分割，但是会发生参数扩展和命令替换。
 2. [[]]中能够防止一些容易犯的错误，[[]]中能够使用&&、||、<和>等。而在[]中只能使用-a、-o、-lt和-gt等。
 3. **字符串模式匹配**  
-  - 使用=~进行模式匹配，=~后的模式不要使用引号，如果=~后使用了引号，则表示=~后面只是纯字符串，而不是要匹配的模式。=~后面是**正则表达式**。**注意**：<font color="red">=~只把前面的字符串与后面的模式从开始位置往后匹配，当后面的模式匹配完毕并且全部匹配上时，则=~表达式的值为真（类似于Java的str.matches()）</font>。如果想要让=~前后完全匹配上，在=~后的模式中需要使用\$来进行结尾匹配。  
+  - 使用=~进行模式匹配，=~后的模式不要使用引号，如果=~后使用了引号，则表示=~后面只是纯字符串，而不是要匹配的模式。=~后面是**正则表达式**。**注意**：<font color="red">=~只把前面的字符串与后面的模式从开始位置往后匹配，当后面的模式匹配完毕并且全部匹配上时，则=~表达式的值为真（类似于Java的str.matches()和Python的re.match(pat, str[, flag])）</font>。如果想要让=~前后完全匹配上，在=~后的模式中需要使用\$来进行结尾匹配。  
       如
   
         ```sh
@@ -297,13 +297,13 @@ echo $?
       
         ```sh
         #!/bin/bash
-        if [[ "tes124" == tes12? ]] #==使用glob进行模式匹配
+        if [[ "tes124" == tes12? ]] # ==使用glob进行模式匹配
         then
             echo "matched1!"
         fi
         #output:matched1!
         
-        if [[ "tes124" == tes1? ]] #==需要前后完全匹配上
+        if [[ "tes124" == tes125? ]] # 可证明==后的模式匹配使用的是glob而不是正则表达式，==需要前后完全匹配上
         then
             echo "matched2!"
         fi
@@ -349,15 +349,15 @@ echo $?
 4. **字符串模式匹配**  
   1. \${var:-string}、\${var:+string}、\${var:=string}、\${var:?string}
       - \${var:-string}中，若变量var为空，则用在命令行中用string来替换\${var:-string}，否则变量var不为空时，则用变量var的值来替换\${var:-string}；对于\${var:=string}的替换规则和\${var:-string}是一样的，所不同之处是\${var:=string}若var为空时，用string替换\${var:=string}的同时，把string赋给变量var： \${var:=string}很常用的一种用法是，判断某个变量是否赋值，没有的话则给它赋上一个默认值。
-      - \${var:+string}的替换规则和上面的相反，即只有当var不是空的时候才替换成string，若var为空时则不替换或者说是替换成变量 var的值，即空值。(因为变量var此时为空，所以这两种说法是等价的) 。
+      - \${var:+string}的替换规则和上面的相反，即只有当var不是空的时候才替换成string，若var为空时则不替换或者说是替换成变量var的值，即空值。(因为变量var此时为空，所以这两种说法是等价的) 。
       - \${var:?string}替换规则为：若变量var不为空，则用变量var的值来替换\${var:?string}；若变量var为空，则把string输出到标准错误中，并从脚本中退出。我们可利用此特性来检查是否设置了变量的值。
       
       补充扩展：这几种替换结构中string不一定是字符串常量，可用另外一个变量的值或是一种命令的输出。
   2. \${var%pattern}、\${var%%pattern}、\${var#pattern}、\${var##pattern}
-      - ${var%pattern}，这种模式时，shell在var中查找pattern，看variable尾部是否与给出的pattern匹配，如果是，就把var的内容去掉右边最短的匹配模式当成返回值，var值没变。
-      - ${var%%pattern}，这种模式时，shell在var中查找pattern，看variable尾部是否与给出的pattern匹配，如果是，就把var的内容去掉右边最长的匹配模式当成返回值，var值没变。
-      - ${var#pattern}，这种模式时，shell在var中查找pattern，看variable首部是否与给出的pattern匹配，如果是，就把var的内容去掉左边最短的匹配模式当成返回值，var值没变。
-      - ${var##pattern}，这种模式时，shell在var中查找pattern，看variable首部是否与给出的pattern匹配，如果是，就把var的内容去掉左边最长的匹配模式当成返回值，var值没变。
+      - ${var%pattern}，这种模式时，shell在var中查找pattern（pattern为**glob模式**），看var尾部是否与给出的pattern匹配，如果是，就把var的内容去掉右边最短的匹配模式当成返回值，var值没变。
+      - ${var%%pattern}，这种模式时，shell在var中查找pattern，看var尾部是否与给出的pattern匹配，如果是，就把var的内容去掉右边最长的匹配模式当成返回值，var值没变。
+      - ${var#pattern}，这种模式时，shell在var中查找pattern，看var首部是否与给出的pattern匹配，如果是，就把var的内容去掉左边最短的匹配模式当成返回值，var值没变。
+      - ${var##pattern}，这种模式时，shell在var中查找pattern，看var首部是否与给出的pattern匹配，如果是，就把var的内容去掉左边最长的匹配模式当成返回值，var值没变。
 
       模式匹配记忆方法：
         
