@@ -368,7 +368,7 @@ CSS选择器，以列表形式返回结果。
 ## 爬取知乎动态 ##
 ### 登录知乎 ###
 
-开启chrome开发者工具，勾选Preserve log，然后登录知乎，就能够看到左下角Name栏里有个email项，从该项得出知乎的登录提交的url为https://www.zhihu.com/login/email。从该项右侧能够看到提交的表单数据，从而可以使用Python来登录知乎。
+开启chrome开发者工具，勾选Preserve log，然后登录知乎，就能够看到左下角Name栏里有个email项，从该项得出知乎的登录提交的url为[https://www.zhihu.com/login/email](https://www.zhihu.com/login/email)。从该项右侧能够看到提交的表单数据，从而可以使用Python来登录知乎。
 
 ![查看知乎登录的提交url](img/zhihu_login.jpg)
 
@@ -406,6 +406,7 @@ xsrf = soup.find("input", {"name": "_xsrf", "type": "hidden"}).get("value")
 
 if __name__ == '__main__':
     try:
+        # 可以请求http://www.zhihu.com/captcha.gif获取验证码
         post_data = urllib.urlencode({
             "_xsrf": xsrf,
             "password": "xxxxxxxxx",

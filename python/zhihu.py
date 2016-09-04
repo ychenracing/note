@@ -31,6 +31,8 @@ xsrf = soup.find("input", {"name": "_xsrf", "type": "hidden"}).get("value")
 
 if __name__ == '__main__':
     try:
+
+        # 可以请求http://www.zhihu.com/captcha.gif获取验证码
         post_data = urllib.urlencode({
             "_xsrf": xsrf,
             "password": "xxxxxxxxxx",
