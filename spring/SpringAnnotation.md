@@ -40,8 +40,8 @@ import org.springframework.web.servlet.view.InternalResourceViewResolver;
 @SessionAttributes("loginUser")
 public class UserController {
 
-    @Autowired // @Resource(name = "", type = UserController.class)
-    @Qualifier("userServiceImpl")         
+    @Autowired // @Resource(name = "", type = UserController.class) @Autowired默认使用类型来自动装备，@Resource默认使用Bean的名称来自动装配
+    @Qualifier("userServiceImpl") 配合@Autowired，可以使用Bean的名称来自动装配，可以用于创建Bean和装配Bean的地方
     public IUserService userService;  
 
     /**
@@ -159,27 +159,67 @@ bean后处理器，对容器中的bean进行后处理增强。
 
 然后在spring配置文件中注册该BeanPostProcessor实现即可，spring会自动注册和采用该Bean后处理器。
 
-然后调用的先后关系：  
+然后调用的先后关系（**Spring Bean的生命周期**）：  
 
-（3和4的先后顺序很奇怪：4和5称为初始化过程）
 
-1. 先spring创建bean，分配存储空间。
-2. 注入依赖。spring注入bean的属性。
-3. （想要初始化。）调用BeanPostProcessor的postProcessBeforeInitialization()方法。
-4. （开始初始化。）调用InitializingBean的afterPropertiesSet()方法。
-5. 调用构造函数、执行初始化方法。
-6. （初始化之后。）调用BeanPostProcessor的postProcessAfterInitialization()方法。
+1. 先Spring创建Bean，分配存储空间，调用该Bean的构造器，实例化。
+2. 注入依赖。Spring注入Bean的属性。
+3. 如果该Bean实现了BeanNameAware接口，调用BeanNameAware的setBeanName方法。
+4. 如果该Bean实现了BeanFactoryAware接口，调用BeanFactoryAware的setBeanFactory方法。
+5. 调用BeanPostProcessor的postProcessBeforeInitialization()方法。
+6. 调用该Bean实现了InitializingBean接口，则调用InitializingBean的afterPropertiesSet()方法。
+7. 如果定义该Bean时指定了init-method，则执行该初始化方法（init-method，不是构造器）。
+8. 调用BeanPostProcessor的postProcessAfterInitialization()方法。
+9. 该Bean可以使用了。Spring在这个时候会把Bean注入到想要使用该Bean的地方。
+10. 容器关闭时，如果该Bean实现了DisposableBean接口，则调用DisposableBean的destory()方法。
+11. 如果定义该Bean时指定了destory-method，则执行该销毁方法。
+
+
+```shell
+现在开始初始化容器
+九月 19, 2016 5:51:18 下午 org.springframework.context.support.ClassPathXmlApplicationContext prepareRefresh
+信息: Refreshing org.springframework.context.support.ClassPathXmlApplicationContext@4b85612c: startup date [Mon Sep 19 17:51:18 CST 2016]; root of context hierarchy
+九月 19, 2016 5:51:18 下午 org.springframework.beans.factory.xml.XmlBeanDefinitionReader loadBeanDefinitions
+信息: Loading XML bean definitions from class path resource [com/iqiyi/yorkchen/beanlifecycle/beanlifecycle.xml]
+这是BeanFactoryPostProcessor实现类构造器！！
+BeanFactoryPostProcessor调用postProcessBeanFactory方法，phone属性改为18317137813
+这是BeanPostProcessor实现类构造器！！
+这是InstantiationAwareBeanPostProcessorAdapter实现类构造器！！
+InstantiationAwareBeanPostProcessor调用postProcessBeforeInstantiation方法
+【构造器】调用Person的构造器
+InstantiationAwareBeanPostProcessor调用postProcessAfterInstantiation方法
+InstantiationAwareBeanPostProcessor调用postProcessPropertyValues方法
+【注入属性】注入Person的属性address
+【注入属性】注入Person的属性name
+【注入属性】注入Person的属性phone
+【BeanNameAware接口】调用BeanNameAware.setBeanName()
+【BeanFactoryAware接口】调用BeanFactoryAware.setBeanFactory()
+BeanPostProcessor接口方法postProcessBeforeInitialization对属性进行更改！
+InstantiationAwareBeanPostProcessor调用postProcessBeforeInitialization方法
+【init-method】调用<bean>的init-method属性指定的初始化方法
+【InitializingBean接口】调用InitializingBean.afterPropertiesSet()
+BeanPostProcessor接口方法postProcessAfterInitialization对属性进行更改！
+InstantiationAwareBeanPostProcessor调用postProcessAfterInitialization方法
+容器初始化成功
+Person [name=陈勇, address=上海, phone=18317137813]
+现在开始关闭容器！
+九月 19, 2016 5:51:18 下午 org.springframework.context.support.ClassPathXmlApplicationContext doClose
+信息: Closing org.springframework.context.support.ClassPathXmlApplicationContext@4b85612c: startup date [Mon Sep 19 17:51:18 CST 2016]; root of context hierarchy
+【destroy-method】调用<bean>的destroy-method属性指定的初始化方法
+【DiposibleBean接口】调用DiposibleBean.destory()
+
+```
 
 **用处**  
 增强处理，生成proxy。
 
 ###BeanFactoryPostProcessor###
-对spring容器进行增强处理。
+对Spring容器进行增强处理。Spring对该BeanFactoryPostProcessor的回调比BeanPostProcessor要早，可以使用该BeanFactoryPostProcessor获取BeanDefinition并对Bean进行修改。
 
 ##Spring整合Mybatis##
-mybatis整合spring最简单的理解就是***把mybatis数据源的配置、事务的管理、SqlSessionFactory的创建以及数据映射器接口Mapper的创建交由spring去管理***，所以mybatis的配置文件mybatis-config.xml中不需要再配置数据源及事务，在业务层service实现时不需要手动地获取SqlSession以及对应的数据映射器接口Mapper，通过spring的注入即可。
+MyBatis整合Spring最简单的理解就是***把MyBatis数据源的配置、事务的管理、SqlSessionFactory的创建以及数据映射器接口Mapper的创建交由Spring去管理***，所以MyBatis的配置文件mybatis-config.xml中不需要再配置数据源及事务，在业务层Service实现时不需要手动地获取SqlSession以及对应的数据映射器接口Mapper，通过Spring的注入即可。
 
-然而，使用mybatis注解可以直接省略mybatis-config.xml配置。例如，
+然而，使用MyBatis注解可以直接省略mybatis-config.xml配置。例如，
 
 - 首先，定义一个注解。注解用来标识dao接口：   
 
@@ -200,7 +240,7 @@ public @interface MyBatisDao {
     String value() default "";
 }
 ```   
-- 在spring的配置文件中配置MapperScannerConfigurer：
+- 在Spring的配置文件中配置MapperScannerConfigurer：
 
 ```xml
 	<!--把mybatis SqlSessionFactory的创建交由spring管理 -->
