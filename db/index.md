@@ -1,15 +1,72 @@
-##Mysql##
+##MySQL##
 存储引擎（索引）：  
 MyISAM（B+树），InnoDB（B+树）
+
+### 组合索引###
 
 最左前缀原则：
 
 - 按照索引的最左列开始查询。如果组合索引建立在第1、2、3列上，但是查询时只用到第2、3列，那么该查询仍要全表扫描，该组合索引未使用。
 - 不能跳过索引中的列进行查询。
- - 如果组合索引建立在第1、2、3列上，但是查询时只用到第1、3列，那么该查询只会利用到第1列的索引，然后对第1列索引查出来的记录进行全部扫描。
- - 如果查询时某个列使用了范围查询，则其右边的列都无法使用索引进行查询优化。
+- 如果组合索引建立在第1、2、3列上，但是查询时只用到第1、3列，那么该查询只会利用到第1列的索引，然后对第1列索引查出来的记录进行全部扫描。
+- 如果查询时某个列使用了范围查询，则其右边的列都无法使用索引进行查询优化。
 
 order by和group by也遵循最左前缀原则。
+
+如，
+
+```sql
+alter table city add index city_index(vc_Name, vc_City, i_Age)
+```
+
+建立这样的组合索引，其实是相当于分别建立了
+
+```sql
+vc_Name,vc_City,i_Age  
+vc_Name,vc_City  
+vc_Name 
+```
+
+例，
+
+```sql
+CREATE TABLE `test_table` (
+  `activity_id` bigint(20) NOT NULL COMMENT '优惠活动id',
+  `collected` bigint(20) NOT NULL DEFAULT '0' COMMENT '领取量',
+  `used` bigint(20) NOT NULL DEFAULT '0' COMMENT '使用量',
+  `pack_num` bigint(20) NOT NULL DEFAULT '0' COMMENT '订单数',
+  `order_num` bigint(20) NOT NULL DEFAULT '0' COMMENT '子订单数',
+  `fee` bigint(20) NOT NULL DEFAULT '0' COMMENT '优惠金额',
+  `order_fee` bigint(20) NOT NULL DEFAULT '0' COMMENT '订单金额',
+  `day` date NOT NULL DEFAULT '0000-00-00' COMMENT '日期',
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY `idx` (`activity_id`,`order_fee`,`day`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+```
+
+下面的查询语句，打钩的表示该句用到了组合索引
+
+```sql
+explain select * from test_table where activity_id = 1 and order_fee = 0 and day = "0000-00-00"; √
+explain select * from test_table where activity_id = 1 and order_fee = 0; √
+explain select * from test_table where activity_id = 1; √
+explain select * from test_table where order_fee = 1;
+explain select activity_id, order_fee, day from test_table where day = "2016-10-20"; √
+explain select activity_id, order_fee, day from test_table where order_fee = 1; √
+explain select order_fee, day, activity_id from mall_coupon_activity_day_stat where order_fee = 1; √
+explain select day from test_table where order_fee = 1; √
+explain select activity_id, order_fee, create_time from test_table where day = "2016-10-20";
+explain select activity_id, order_fee, create_time from test_table where activity_id = 1; √
+explain select activity_id, order_fee, create_time from test_table where order_fee = 1;
+explain select activity_id, order_fee, create_time from test_table where fee = 1;
+explain select activity_id, order_fee from test_table where fee = 1 and activity_id = 1; √
+```
+
+#### 组合索引总结####
+
+1. 如果`select`中的字段全部是组合索引的字段（不在乎顺序），那么，只要`where`中的字段全都是组合索引的字段（不在乎顺序、个数），那么该组合索引就会在该`select`中用到。
+2. 如果`select`中存在组合索引中没有的字段，那么，只要`where`中所有字段组合起来（可以是任意顺序）符合组合索引的最左前缀原则，那么该组合索引就会在该`select`中用到。
+3. 其他情况该组合索引不会被用到。
 
 ##B+树##
 在数据库索引的应用中，B+树按照下列方式进行组织：
@@ -96,19 +153,10 @@ InnoDB 表是基于**聚簇索引**建立的。因此InnoDB 的索引能提供�
 - 一是主索引的区别，InnoDB的数据文件本身就是索引文件。而MyISAM的索引和数据是分开的。
 - 二是辅助索引的区别：InnoDB的辅助索引data域存储相应记录主键的值而不是地址。而MyISAM的辅助索引和主键索引没有多大区别。
 
-##注意##
-###最左前缀###
-```sql
-alter table city add index city_index(vc_Name, vc_City, i_Age)
-```
-
-建立这样的组合索引，其实是相当于分别建立了
-
-```sql
-vc_Name,vc_City,i_Age  
-vc_Name,vc_City  
-vc_Name 
-```
-
 ##Reference##
-[1] [经典好文：B-树和B+树的应用：数据搜索和数据库索引](http://blog.csdn.net/hguisu/article/details/7786014)
+[1][经典好文：B-树和B+树的应用：数据搜索和数据库索引](http://blog.csdn.net/hguisu/article/details/7786014)
+
+[2][记一次MySql单列索引和联合索引的使用区别](https://my.oschina.net/857359351/blog/658668)
+
+[3][MySQL单列索引和组合索引(联合索引)的区别详解](http://www.phpsong.com/586.html)
+
