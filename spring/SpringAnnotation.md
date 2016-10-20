@@ -8,7 +8,7 @@
 // 那么"loginUser"便被自动放到HttpSession  
 // @ModelAttribute
 // @ResponseBody
-// @Scope("prototype")
+// @Scope("prototype") || @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 // @Qualifer("userServiceImpl")
 // @Resource(name = "", type = *.class)
 // @PostConstruct
