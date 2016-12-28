@@ -7,7 +7,7 @@
 ##泛型##
 ###擦除的问题###
 1. 在什么情况下，编译器会自动插入转型代码？  
-解：~~在对传递进来的值进行额外的编译期检查，并插入对传递出去的值的转型~~，<font color="red">把传递出去的值赋予一个泛型类型的引用时，因为运行时实际是Object的，所以编译器会插入转型代码转成泛型类型的</font>。
+   解：~~在对传递进来的值进行额外的编译期检查，并插入对传递出去的值的转型~~，<font color="red">把传递出去的值赋予一个泛型类型的引用时，因为运行时实际是Object的，所以编译器会插入转型代码转成泛型类型的</font>。
 
  ***在Java中，不管类型参数是什么，一个类（使用了泛型）的所有实例都是同一类型。类型参数会在运行时被抹去。在C++中，参数类型不同，实例类型也不同。***
 
@@ -167,7 +167,7 @@ Pattern类和Matcher类的使用方法：
 
 1. Pattern的静态方法matches(regex, string)，判断正则表达式是否能匹配字符串，返回boolean。相当于matcher对象的无参方法matches()。
 2. Matcher对象的方法：无参方法<font color="red">lookingAt()</font>，匹配字符串的起始部分，如果返回true，则可以接着调用group方法获得匹配了的字符串部分；无参<font color="red">find()</font>，寻找字符串的下一个匹配，返回true之后，可以调用group、start（包含）和end（不包含）方法操作；有参<font color="red">find(index)</font>，相当于从第index位置起的无参find()；无参<font color="red">group()</font>，在find()操作之后，因为要先用find找到匹配，才能返回匹配的部分，group返回匹配了的string，和start()、end()可以一起用，来获得匹配部分的详细信息。无参<font color="red">reset()</font>，在find()迭代完成之后，调用reset重置，可以重新迭代。有参<font color="red">reset(string)</font>，则表示把matcher作用于新的string，即参数；<font color="red">appendReplacement(StringBuffer, replacement)</font>【把matcher上匹配到的结果替换为replacement（需要先调用find找到匹配部分），replacement中可以使用组号获取正则表达式中的组，然后再把替换后的结果挂载到StringBuffer中】，允许在替换的时候做一些特殊处理，一步一步进行替换，把上一次匹配和这次匹配之间的结果（包括这次匹配替换）挂在到stringbuffer上去，<font color="red">appendTail(stringbuffer)</font>把最后一次匹配之后剩余的字符串挂载到stringbuffer上。如，  
-![](img/skeleton/10.png)
+   ![](img/skeleton/10.png)
 
  正则表达式中的括号不是表示字符串的括号，表示的是捕获组。
 
@@ -180,7 +180,7 @@ Pattern类和Matcher类的使用方法：
 - 贪婪型的匹配原理，一个一个匹配，先一直匹配到最后，发现最后的字符不匹配时，往前退一格再匹配，不匹配时再退一格，以此递推；
 - 勉强型是匹配到一个字符后看看匹配能否结束，能结束就结束；
 - 占有型（完全匹配）是从第一个匹配开始，把后面所有字符串读入来匹配，一直匹配到最后，如果最后的字符不匹配的话，那么也不回退，返回false结束。如，  
-![](img/skeleton/11.png)
+  ![](img/skeleton/11.png)
 
 第三个例子的量词是占有型，所以在寻找匹配时失败。在这种情况下，整个输入的字符串被.*+消耗了，什么都没有剩下来满足表达式末尾的“foo”。
 
@@ -193,11 +193,11 @@ Pattern类和Matcher类的使用方法：
 **Thinking in java中的一个错误（是作者犯得错误还是编译器版本不同造成的）？**利用反射，可以修改final域的基本类型的值，在eclipse中不能修改final域的String对象，【但是用文本编辑器，使用javac编译，则可以修改final域的对象（String也可以）】。但是在两种情况下，都不能修改static final域。如，
 
 1. final域类（没有static修饰符，如果有static修饰符，试图修改static final域的值，则会在运行时抛出IllegalAccessException异常）  
-![](img/skeleton/13.png)
+   ![](img/skeleton/13.png)
 2. 利用反射获取和修改final域（用sublime编辑，javac编译的情况）  
-![](img/skeleton/14.png)
+   ![](img/skeleton/14.png)
 3. 输出  
-![](img/skeleton/15.png)
+   ![](img/skeleton/15.png)
 
 ###结论：###
 只要知道方法名，只要知道变量名，利用反射就可以随意获取一个类的信息，调用一个类的方法(method.invoke(obj))，无论访问权限修饰符是什么！（Method和Field都有setAccessible(boolean)方法，可以把访问权限设置为public【但是获取修饰符时，private修改访问权限之后不会显示为public】）【class.getMethods()会获取继承而来的所有方法，class.getDeclaredMethods()获取类中声明的方法】  
@@ -494,17 +494,17 @@ JDK7中str.intern()：判断在常量池有没有和str内容一样的字符串�
    - 内部类是面向对象的闭包，因为它不仅包含创建内部类的作用域的信息，还自动拥有一个指向此外围类对象的引用，在此作用域内，内部类有权操作所有的成员，包括private成员。一般使用一个库或类时，是你主动调用人家的API，这个叫Call，有的时候这样不能满足需要，需要你注册（注入）你自己的程序（比如一个对象)，然后让人家在合适的时候来调用你，这叫Callback。
    - 当父类和实现的接口出现同名函数时，你又不想父类的函数被覆盖，回调可以帮你解决这个问题。
    - Java中匿名内部类要引用外部方法的变量时，要求变量一定要是final的，这是因为闭包机制。因为闭包会使得某些自由变量的生命周期变长，直到回调函数执行完毕。  
-![](img/skeleton/28.png)  
-上面getHello()就是一个回调函数，它给别人注册了一个可以调用本身内部状态的接口，getHello()函数中就使用了闭包。java中每个方法在调用的时候，对方法中的参数、内部参数创建的都是局部变量，比如上图中temp传递进来，就会创建一个局部变量引用这个temp，在方法调用完毕之后这个局部变量就会被回收。<font color="red">闭包机制应该使得方法中的局部变量的生命周期延长</font>，因为该匿名内部类可以完全访问外部的状态（即getHello方法中的状态），这个被返回的匿名内部类实例也可能一直被外部引用着，如果没有使用final，方法中的状态应该会随着方法调用的结束而消亡，但是匿名内部类的实例还被外部引用着，而且这个匿名内部类的实例内部还使用了已经随着方法消亡的状态，这会造成错误。所以匿名内部类中引用着的getHello方法中的局部变量不应该随着方法调用结束而消亡。所以一定要使用final，<font color="red">使得在创建匿名内部类实例的时候，所引用的方法的局部变量被复制了一份</font>(***如何证明被复制了一份？***)，这份复制的变量的生命周期和匿名内部类的实例的生命周期是一样的，不会随着这个回调函数结束而终止。
+     ![](img/skeleton/28.png)  
+     上面getHello()就是一个回调函数，它给别人注册了一个可以调用本身内部状态的接口，getHello()函数中就使用了闭包。java中每个方法在调用的时候，对方法中的参数、内部参数创建的都是局部变量，比如上图中temp传递进来，就会创建一个局部变量引用这个temp，在方法调用完毕之后这个局部变量就会被回收。<font color="red">闭包机制应该使得方法中的局部变量的生命周期延长</font>，因为该匿名内部类可以完全访问外部的状态（即getHello方法中的状态），这个被返回的匿名内部类实例也可能一直被外部引用着，如果没有使用final，方法中的状态应该会随着方法调用的结束而消亡，但是匿名内部类的实例还被外部引用着，而且这个匿名内部类的实例内部还使用了已经随着方法消亡的状态，这会造成错误。所以匿名内部类中引用着的getHello方法中的局部变量不应该随着方法调用结束而消亡。所以一定要使用final，<font color="red">使得在创建匿名内部类实例的时候，所引用的方法的局部变量被复制了一份</font>(***如何证明被复制了一份？***)，这份复制的变量的生命周期和匿名内部类的实例的生命周期是一样的，不会随着这个回调函数结束而终止。
 
 #Concurrent#
 ##ConcurrentHashMap##
 首先，关注其中的两个内部类:
 
 1. 内部类Segment，其表示HashMap中的桶，它继承了ReentrantLock:  
-![](img/skeleton/29.png)  
+   ![](img/skeleton/29.png)  
 2. 内部类HashEntry，表示其中的每一项，相当于HashMap中的内部类Entry。其有四个域：hash、key、value、next:  
-![](img/skeleton/30.png)  
+   ![](img/skeleton/30.png)  
 
 其次，关注ConcurrentHashMap中的get方法：  
 ![](img/skeleton/31.png)  
@@ -691,14 +691,14 @@ synchronized(sharedMonitor){
 1. sleep(milliseconds)
 2. wait()
 3. 等待I/O
-3. synchronized获取对象锁，但是另一个任务已经获得了这个对象锁。
+4. synchronized获取对象锁，但是另一个任务已经获得了这个对象锁。
 
 中断线程的方式：
 
 1. 通过Thread.interrupt()方法。但是一般不显式用这种方法，而是通过Future<?>来获取任务提交之后的引用，通过Future.cancel(true)方法来向任务调用interrupt()。此种方法只能中断sleep()方式的阻塞。
 2. I/O和synchronized方式的阻塞不能通过interrupt来中断，只能关闭任务在其上发生阻塞的底层资源（比如关闭I/O流）。NIO类库提供了更人性化的中断，被阻塞的NIO通道会自动的响应中断（interrupt能中断它）, 比如SocketChannel。
 3. synchronized和lock比较。同样是互斥的作用， 通过synchronized来互斥，一个对象可以多次获得该对象的锁；***通过Lock.lock()来互斥，则不能多次获得该对象的锁（<font color="red">？</font>）***，即不能多次执行lock()，会被阻塞。通过synchronized，该线程不会被中断，但是可以调用interrupt()方法，而且interrupt标志位会设置为true，但是却没有被中断；通过lock()方法，该线程也不可以被interrupt()中断，只是会设置标志位；但是，通过
-Lock.lockInterruptibly()，可以被中断，要求去处理InterruptException。
+   Lock.lockInterruptibly()，可以被中断，要求去处理InterruptException。
 
 注意：Thread.interrupt()中断的有三种操作，还有wait()、join()也能被中断，中断发生的时刻只是在任务要进入到阻塞操作中和已经在阻塞操作中这两种情况。所以，有时候你虽然写了捕获中断异常的代码，但是却不一定能够通过catch来退出，因为如果该线程是在执行不可中断的I/O或者被阻塞的synchronized方法或者是其他的一些耗时的操作时，这时候你调用Thread.interrupt()操作时中断不了该线程的。如：  
 ![](img/skeleton/44.png)  
@@ -821,7 +821,7 @@ PriorityBlockingQueue与DelayQueue\<T\>的区别就是：
 
 - DelayQueue中存放的对象需要实现Delayed\<T\>接口，其有个getDelay(TimeUnit)方法。相似之处DelayQueue内部维持了一个PriorityQueue，所以很多操作很相似。
 
-在建立PriorityQueue时（注意不是PriorityBlockingQueue），如果想要传递一个自定义的比较器，那么就必须得传递一个初始容量（JDK1.8 以后，传递自定义的比较器不需要传奇初始容量了）。
+在建立PriorityQueue时（注意不是PriorityBlockingQueue），如果想要传递一个自定义的比较器，那么就必须得传递一个初始容量（JDK1.8 以后，传递自定义的比较器不需要传递初始容量了）。
 
 ###SynchronousQueue\<E\>###
 同步移交队列。不像ArrayBlockingQueue或LinkedListBlockingQueue，SynchronousQueue内部并没有数据缓存空间，你不能调用peek()方法来看队列中是否有数据元素，因为数据元素只有当你试着取走的时候才可能存在，不取走而只想偷窥一下是不行的，当然遍历这个队列的操作也是不允许的。队列头元素是第一个排队要插入数据的线程，而不是要交换的数据。数据是在配对的生产者和消费者线程之间直接传递的，并不会将数据缓冲数据到队列中。可以这样来理解：生产者和消费者互相等待对方，握手，然后一起离开。

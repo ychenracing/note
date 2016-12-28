@@ -137,3 +137,64 @@ log4j.appender.E.Threshold = ERROR
 log4j.appender.E.layout = org.apache.log4j.PatternLayout
 log4j.appender.E.layout.ConversionPattern = [%p] %-d{yyyy-MM-dd HH:mm:ss} [%l:%c:%t:%r]-[%p] %m%n
 ```
+### FlyVar中Log4J配置###
+
+```
+# 这里定义能显示到的最低级别，若定义到INFO级别，则看不到DEBUG级别的信息
+log4j.rootLogger=INFO,defaultLog
+
+log4j.logger.cn.edu.fudan.iipl.flyvar=INFO,Console,defaultLog
+
+datestamp=HH:mm:ss.SSS
+roll.pattern.hourly=.yyyy-MM-dd.HH
+roll.pattern.daily=.yyyy-MM-dd
+
+log4j.appender.Console=org.apache.log4j.ConsoleAppender
+log4j.appender.Console.layout=org.apache.log4j.PatternLayout
+log4j.appender.Console.layout.ConversionPattern=%d{${datestamp}} %p %c{1}[%L]-%m%n
+
+
+# Controller层log记录到controller.log控制台和总日志文件
+log4j.logger.cn.edu.fudan.iipl.flyvar.controller=INFO,controller,Console,defaultLog
+log4j.appender.controller=org.apache.log4j.DailyRollingFileAppender
+log4j.appender.controller.file=${flyvar.root}/WEB-INF/logs/controller.log
+log4j.appender.controller.DatePattern=${roll.pattern.daily}
+log4j.appender.controller.layout=org.apache.log4j.PatternLayout
+log4j.appender.controller.layout.ConversionPattern=%d{${datestamp}} %p %c{1}[%L]-%m%n
+
+
+# 业务层log记录到service.log控制台和总日志文件
+log4j.logger.cn.edu.fudan.iipl.flyvar.service=INFO,service,Console,defaultLog
+log4j.appender.service=org.apache.log4j.DailyRollingFileAppender
+log4j.appender.service.file=${flyvar.root}/WEB-INF/logs/service.log
+log4j.appender.service.DatePattern=${roll.pattern.daily}
+log4j.appender.service.layout=org.apache.log4j.PatternLayout
+log4j.appender.service.layout.ConversionPattern=%d{${datestamp}} %p %c{1}[%L]-%m%n
+
+
+# DAO层log记录到dao.log控制台和总日志文件
+log4j.logger.cn.edu.fudan.iipl.flyvar.dao=INFO,dao,Console,defaultLog
+log4j.appender.dao=org.apache.log4j.DailyRollingFileAppender
+log4j.appender.dao.file=${flyvar.root}/WEB-INF/logs/dao.log
+log4j.appender.dao.DatePattern=${roll.pattern.daily}
+log4j.appender.dao.layout=org.apache.log4j.PatternLayout
+log4j.appender.dao.layout.ConversionPattern=%d{${datestamp}} %p %c{1}[%L]-%m%n
+
+
+# 测试及日常日志打印log记录到common.log控制台和总日志文件
+log4j.logger.cn.edu.fudan.iipl.flyvar.common=INFO,common,Console,defaultLog
+log4j.appender.common=org.apache.log4j.DailyRollingFileAppender
+log4j.appender.common.file=${flyvar.root}/WEB-INF/logs/common.log
+log4j.appender.common.DatePattern=${roll.pattern.daily}
+log4j.appender.common.layout=org.apache.log4j.PatternLayout
+log4j.appender.common.layout.ConversionPattern=%d{${datestamp}} %p %c{1}[%L]-%m%n
+
+
+# 总日志文件，所有log记录到控制台和该flyvar.log总日志文件
+log4j.appender.defaultLog=org.apache.log4j.DailyRollingFileAppender
+log4j.appender.defaultLog.file=${flyvar.root}/WEB-INF/logs/flyvar.log
+log4j.appender.defaultLog.DatePattern=${roll.pattern.hourly}
+log4j.appender.defaultLog.layout=org.apache.log4j.PatternLayout
+log4j.appender.defaultLog.layout.ConversionPattern=%d{${datestamp}} %p %c{1}[%L]-%m%n
+```
+
