@@ -1,5 +1,5 @@
-## GROUP BY ##
-### Attention ###
+## GROUP BY
+### Attention
 1. select中的字段，要么出现在group by后面作为分组的依据，要么出现在select后面的聚合函数中。  
  
  Example:
@@ -29,7 +29,7 @@ having SUM(数量) > 10
 
  先筛选出数量 > 8的那些列，然后对这些列进行按类别的group by，然后在group by的结果基础上，再进行having操作，筛选出sum(数量) > 10的那些结果。
 
-### JOIN ###
+### JOIN
 
 ```sql
 id name       id  name
@@ -89,7 +89,7 @@ null  null       1     Rutabaga
 null  null       3     Darth Vader
 ```
 
-##explain select 语句##
+## explain select 语句
 explain 可以分析后面的select语句的执行情况
 
 ```sql
@@ -135,7 +135,7 @@ rows:表示查询到的行数；
 Extra:表示查询过程中的附加信息
 ```
 
-##单列索引和组合索引##
+## 单列索引和组合索引
 MySQL单列索引是我们使用MySQL数据库中经常会见到的，MySQL单列索引和组合索引的区别可能有很多人还不是十分的了解，下面就为您分析两者的主要区别，供您参考学习。
 
 为了形象地对比两者，再建一个表：
@@ -192,7 +192,7 @@ SELECT * FROM myIndex WHREE i_Age=20 AND vc_City="郑州"
 SELECT * FROM myIndex WHREE vc_City="郑州" 
 ```
 
-##UNION和UNION ALL##
+## UNION和UNION ALL
 union和union all是将两个select语句的结果进行合并。
 
 union会对结果进行排序再合并，并且去除重复记录，如果表数据量大的话可能会导致用磁盘进行排序，union all只是简单的合并结果集。
@@ -202,8 +202,8 @@ union会对结果进行排序再合并，并且去除重复记录，如果表数
 - 所有查询中的列数和列的顺序必须相同。
 - 数据类型必须兼容。
 
-##SQL注入与MyBatis##
-###SQL注入###
+## SQL注入与MyBatis
+### SQL注入
 如果用户执行：
 
 ```sql
@@ -244,7 +244,7 @@ SELECT * FROM $TABLE_NAME$ WHERE $COLUMN_NAME$ = #value#
 ```
 这时你一定要仔细过滤那些值以避免SQL注入。当然这种情况不只存在Ibatis中。
 
-###占位符的注入解决###
+### 占位符的注入解决
 iBatis解决sql注入
 
 1. ibatis xml配置：下面的写法只是简单的转义 name like '%$name$%'
@@ -257,7 +257,7 @@ iBatis解决sql注入
 
  > - $xxx$ 则是把xxx作为字符串拼接到你的sql语句中, 比如 order by topicId , 语句这样写 ... order by \#xxx\#，ibatis 就会把他翻译成 order by 'topicId' （这样就会报错） 语句这样写 ... order by $xxx$，ibatis 就会把他翻译成 order by topicId；
 
-##注意##
+## 注意
 1. \#将传入的数据都当成一个字符串，会对自动传入的数据加一个双引号。如：order by \#user\_id\#，如果传入的值是111,那么解析成sql时的值为order by "111", 如果传入的值是id，则解析成的sql为order by "id"。
 2. $将传入的数据直接显示生成在sql中。如：order by $user\_id$，如果传入的值是111,那么解析成sql时的值为order by user\_id, 如果传入的值是id，则解析成的sql为order by id.
 3. \#方式能够很大程度防止sql注入。
